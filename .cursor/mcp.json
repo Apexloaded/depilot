@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "adk-docs-mcp": {
+      "command": "/opt/homebrew/bin/uvx",
+      "args": [
+        "--from",
+        "mcpdoc",
+        "mcpdoc",
+        "--urls",
+        "AgentDevelopmentKit:https://adk.dev/llms.txt",
+        "--transport",
+        "stdio"
+      ]
+    }
+  }
+}
