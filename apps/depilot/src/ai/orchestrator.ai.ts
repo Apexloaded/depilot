@@ -11,15 +11,14 @@ import { sessionService, memoryService } from '../common/utils/index.js';
 import { memoryPlugin } from '../common/plugins/memory-ingestion.plugin.js';
 import { landGuardAgent } from './agents/index.js';
 import { MASTER_ORCHESTRATOR_INSTRUCTION } from './prompts/base.prompt.js';
-import { GEMINI_2_MODEL } from './models/gemini/gemini-2.js';
-import { GEMINI_3_MODEL } from './models/gemini/gemini-3.js';
+import { GEMINI_3_MODEL } from './models/gemini/index.js';
 
 export class Agent {
   public name: string = 'master_orchestrator';
 
   private agent: Runner;
 
-  private orchestrator = new LlmAgent({
+  orchestrator = new LlmAgent({
     name: this.name,
     model: GEMINI_3_MODEL._3_5_FLASH,
     instruction: MASTER_ORCHESTRATOR_INSTRUCTION,
@@ -53,5 +52,6 @@ export class Agent {
 
 const agent = new Agent();
 const runner = agent.init();
+const rootAgent = agent.orchestrator;
 
-export { agent, runner };
+export { agent, runner, rootAgent };

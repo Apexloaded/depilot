@@ -1,7 +1,25 @@
 import type { Express, NextFunction, Request, Response } from 'express';
-import { Chat } from './types/chat.type.js';
+import { Chat, ChatAttachment } from './types/chat.type.js';
 import { chatService, ChatService } from './chat.service.js';
 import logger from '../../common/logger/index.js';
+import { multipart } from '../../common/middlewares/index.js';
+
+function chatFromRequest(req: Request<unknown, unknown, Chat>): Chat {
+  const files = Array.isArray(req.files) ? req.files : [];
+  const attachments: ChatAttachment[] = files.map((file) => ({
+    originalName: file.originalname,
+    mimeType: file.mimetype,
+    buffer: file.buffer,
+    size: file.size,
+  }));
+
+  return {
+    userId: req.body.userId,
+    sessionId: req.body.sessionId,
+    message: req.body.message,
+    ...(attachments.length > 0 ? { attachments } : {}),
+  };
+}
 
 class ChatController {
   constructor(private chatService: ChatService) {}
@@ -12,10 +30,10 @@ class ChatController {
     next: NextFunction,
   ) {
     try {
-      const result = await this.chatService.handleChat(req.body, {
+      const result = await this.chatService.handleChat(chatFromRequest(req), {
         stream: false,
       });
-      
+
       res.json(result);
     } catch (error) {
       logger.error('Chat request failed', error);
@@ -29,7 +47,7 @@ class ChatController {
     next: NextFunction,
   ) {
     try {
-      const stream = await this.chatService.handleChat(req.body, {
+      const stream = await this.chatService.handleChat(chatFromRequest(req), {
         stream: true,
       });
 
@@ -53,6 +71,6 @@ class ChatController {
 const controller = new ChatController(chatService);
 
 export default (app: Express) => {
-  app.post('/chat', controller.chat.bind(controller));
-  app.post('/stream', controller.stream.bind(controller));
+  app.post('/chat', multipart, controller.chat.bind(controller));
+  app.post('/stream', multipart, controller.stream.bind(controller));
 };

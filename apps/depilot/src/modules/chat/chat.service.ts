@@ -1,7 +1,13 @@
-import { ChatOptions, Chat, ChatStreamChunk } from './types/chat.type.js';
+import {
+  ChatOptions,
+  Chat,
+  ChatAttachment,
+  ChatStreamChunk,
+} from './types/chat.type.js';
 import { sessionService } from '../../common/utils/index.js';
 import { agent, runner } from '../../ai/orchestrator.ai.js';
 import type { Content, Part } from '@google/genai';
+import logger from '../../common/logger/index.js';
 
 export class ChatService {
   // Overload 1: Stream mode returns an AsyncGenerator of chunks
@@ -17,15 +23,16 @@ export class ChatService {
   ): Promise<{ sessionId: string; response: string }>;
 
   async handleChat(chat: Chat, options?: ChatOptions) {
-    const { sessionId, userId, message } = chat;
+    const { sessionId, userId, message, attachments = [] } = chat;
 
     if (
       typeof userId !== 'string' ||
-      typeof message !== 'string' ||
       !userId.trim() ||
-      !message.trim()
+      (!attachments.length &&
+        (typeof message !== 'string' || !message.trim())) ||
+      attachments.some((attachment) => !Buffer.isBuffer(attachment.buffer))
     ) {
-      throw new Error('userId and message are required strings');
+      throw new Error('userId and either message or attachments are required');
     }
 
     const activeSessionId =
@@ -41,7 +48,7 @@ export class ChatService {
 
     const newMessage: Content = {
       role: 'user',
-      parts: [{ text: message }],
+      parts: this.buildContentParts(message, attachments),
     };
 
     const runInput = {
@@ -75,6 +82,9 @@ export class ChatService {
     // --- NON-STREAMING BRANCH ---
     let finalResponse = '';
 
+    logger.info(
+      '[Taskmaster System] Starting autonomous tool-calling execution loop...',
+    );
     for await (const event of runner.runAsync(runInput)) {
       const text = this.textFromParts(event.content?.parts);
       if (text) {
@@ -86,6 +96,28 @@ export class ChatService {
       sessionId: activeSessionId,
       response: finalResponse,
     };
+  }
+
+  private buildContentParts(
+    message: string | undefined,
+    attachments: ChatAttachment[],
+  ): Part[] {
+    const parts: Part[] = [];
+
+    if (typeof message === 'string' && message.trim()) {
+      parts.push({ text: message });
+    }
+
+    for (const attachment of attachments) {
+      parts.push({
+        inlineData: {
+          data: attachment.buffer.toString('base64'),
+          mimeType: attachment.mimeType,
+        },
+      });
+    }
+
+    return parts;
   }
 
   private textFromParts(parts?: Part[]) {

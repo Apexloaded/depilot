@@ -1,7 +1,15 @@
+export type ChatAttachment = {
+  originalName: string;
+  mimeType: string;
+  buffer: Buffer;
+  size: number;
+};
+
 export type Chat = {
   userId?: string;
   sessionId?: string;
   message?: string;
+  attachments?: ChatAttachment[];
 };
 
 export type ChatOptions = {

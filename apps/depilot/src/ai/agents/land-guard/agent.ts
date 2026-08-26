@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import { LlmAgent } from '@google/adk';
-import { LAND_GUARD_INSTRUCTION } from './prompts/base.prompt.js';
+import { LAND_GUARD_INSTRUCTION } from './prompts/lang-guard.prompt.js';
 import { landGuardTools } from './tools/index.js';
-import { GEMINI_3_MODEL } from '../../models/gemini/gemini-3.js';
+import { GEMINI_3_MODEL } from '../../models/gemini/index.js';
 
 export class LandGuardAgent {
   public name: string = 'land_guard_agent';
@@ -11,7 +11,7 @@ export class LandGuardAgent {
   constructor() {
     this.agent = new LlmAgent({
       name: this.name,
-      model: GEMINI_3_MODEL._3_5_FLASH,
+      model: GEMINI_3_MODEL._3_1_PRO_PREVIEW,
       instruction: LAND_GUARD_INSTRUCTION,
       tools: landGuardTools,
     });

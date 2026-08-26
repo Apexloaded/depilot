@@ -1,1 +1,1 @@
-export * from './base.prompt.js';
+export * from './lang-guard.prompt.js';

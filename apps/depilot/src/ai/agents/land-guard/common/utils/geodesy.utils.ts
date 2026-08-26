@@ -11,6 +11,8 @@ import type {
   GeometricAuditResult,
   BeaconInput,
 } from '../types/cadastral.types.js';
+import pointInPolygon from '@turf/boolean-point-in-polygon';
+import { point, polygon } from '@turf/helpers';
 
 // Define Minna Datum UTM Zone 31N (Lagos, Ogun, Oyo, Osun, Ondo, Ekiti, Edo, Delta)
 proj4.defs(
@@ -183,24 +185,10 @@ export function reconstructBeacon(
  * Tests if a point (lng, lat) is inside a polygon using ray casting.
  */
 export function isPointInPolygon(
-  point: [number, number],
-  polygonRing: number[][],
+  _point: [number, number],
+  _polygonRing: number[][],
 ): boolean {
-  const [x, y] = point; // [lng, lat]
-  let inside = false;
-
-  for (let i = 0, j = polygonRing.length - 1; i < polygonRing.length; j = i++) {
-    const currentPoint = polygonRing[i]!;
-    const previousPoint = polygonRing[j]!;
-    const xi = currentPoint[0]!;
-    const yi = currentPoint[1]!;
-    const xj = previousPoint[0]!;
-    const yj = previousPoint[1]!;
-
-    const intersect =
-      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-    if (intersect) inside = !inside;
-  }
-
-  return inside;
+  const pt = point(_point);
+  const poly = polygon([_polygonRing as [number, number][]]);
+  return pointInPolygon(pt, poly);
 }
