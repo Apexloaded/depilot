@@ -9,8 +9,7 @@ import {
   type Session,
 } from '@google/adk';
 import { FieldValue, firestore } from '@repo/firebase';
-
-const sessions = firestore.collection('agent_sessions');
+import { sanitizeForFirestore } from './firestore.sanitizer.js';
 
 type StoredSession = Session & {
   updatedAt: number;
@@ -20,11 +19,9 @@ type FirestoreDocument = {
   data(): unknown;
 };
 
-function documentId(appName: string, userId: string, sessionId: string) {
-  return [appName, userId, sessionId].map(encodeURIComponent).join('__');
-}
-
 class SessionService extends BaseSessionService {
+  private collection = firestore.collection('agent_sessions');
+
   async getOrCreateSession(request: CreateSessionRequest): Promise<Session> {
     const existing = await this.getSession({
       appName: request.appName,
@@ -49,8 +46,8 @@ class SessionService extends BaseSessionService {
       lastUpdateTime: Date.now(),
     };
 
-    await sessions
-      .doc(documentId(session.appName, session.userId, session.id))
+    await this.collection
+      .doc(this.documentId(session.appName, session.userId, session.id))
       .set({
         ...session,
         updatedAt: session.lastUpdateTime,
@@ -60,8 +57,8 @@ class SessionService extends BaseSessionService {
   }
 
   async getSession(request: GetSessionRequest): Promise<Session | undefined> {
-    const snapshot = await sessions
-      .doc(documentId(request.appName, request.userId, request.sessionId))
+    const snapshot = await this.collection
+      .doc(this.documentId(request.appName, request.userId, request.sessionId))
       .get();
 
     if (!snapshot.exists) {
@@ -81,8 +78,6 @@ class SessionService extends BaseSessionService {
       events = events.slice(-request.config.numRecentEvents);
     }
 
-    console.log(storedSession);
-
     return {
       id: storedSession.id,
       appName: storedSession.appName,
@@ -96,7 +91,7 @@ class SessionService extends BaseSessionService {
   async listSessions(
     request: ListSessionsRequest,
   ): Promise<ListSessionsResponse> {
-    const snapshot = await sessions
+    const snapshot = await this.collection
       .where('appName', '==', request.appName)
       .where('userId', '==', request.userId)
       .get();
@@ -135,8 +130,8 @@ class SessionService extends BaseSessionService {
   }
 
   async deleteSession(request: DeleteSessionRequest): Promise<void> {
-    await sessions
-      .doc(documentId(request.appName, request.userId, request.sessionId))
+    await this.collection
+      .doc(this.documentId(request.appName, request.userId, request.sessionId))
       .delete();
   }
 
@@ -144,14 +139,16 @@ class SessionService extends BaseSessionService {
     const appendedEvent = await super.appendEvent({ session, event });
     session.lastUpdateTime = Date.now();
 
-    const docRef = sessions.doc(
-      documentId(session.appName, session.userId, session.id),
+    const docRef = this.collection.doc(
+      this.documentId(session.appName, session.userId, session.id),
     );
+
+    const safeEvent = sanitizeForFirestore(appendedEvent);
 
     await docRef.set(
       {
-        events: FieldValue.arrayUnion(appendedEvent),
-        state: session.state ?? {},
+        events: FieldValue.arrayUnion(safeEvent),
+        state: sanitizeForFirestore(session.state ?? {}),
         lastUpdateTime: session.lastUpdateTime,
         updatedAt: session.lastUpdateTime,
       },
@@ -159,6 +156,10 @@ class SessionService extends BaseSessionService {
     );
 
     return appendedEvent;
+  }
+
+  private documentId(appName: string, userId: string, sessionId: string) {
+    return [appName, userId, sessionId].map(encodeURIComponent).join('__');
   }
 }
 

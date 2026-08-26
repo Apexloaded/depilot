@@ -3,7 +3,6 @@ import express from 'express';
 import config from 'config';
 import logger from './common/logger/index.js';
 import modules from './modules/index.js';
-import { firestore } from '@repo/firebase';
 
 const port = config.get<number>('app.port');
 const host = config.get<string>('app.host');

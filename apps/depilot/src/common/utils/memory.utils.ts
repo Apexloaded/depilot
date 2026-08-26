@@ -1,5 +1,4 @@
 import {
-  BasePlugin,
   type BaseMemoryService,
   type MemoryEntry,
   type SearchMemoryRequest,
@@ -7,10 +6,8 @@ import {
   type Session,
 } from '@google/adk';
 import { firestore } from '@repo/firebase';
-
-const memoryScopes = firestore.collection('agent_memory');
-const maxQueryTerms = 10;
-const maxResults = 20;
+import { sanitizeDocId } from './collection.utils.js';
+import { sanitizeForFirestore } from './firestore.sanitizer.js';
 
 type StoredMemoryEntry = {
   content: MemoryEntry['content'];
@@ -34,10 +31,6 @@ function scopeId(appName: string, userId: string) {
   return [appName, userId].map(encodeURIComponent).join('__');
 }
 
-function entryId(sessionId: string, eventId: string) {
-  return [sessionId, eventId].map(encodeURIComponent).join('__');
-}
-
 function contentText(content: MemoryEntry['content']) {
   return (content.parts ?? [])
     .flatMap((part) => ('text' in part && part.text ? [part.text] : []))
@@ -48,36 +41,16 @@ function searchTokens(text: string) {
   return [...new Set(text.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])];
 }
 
-function memoryEntries(session: Session) {
-  return session.events.flatMap((event, index) => {
-    if (!event.content) {
-      return [];
-    }
-
-    const text = contentText(event.content);
-    const tokens = searchTokens(text);
-    if (tokens.length === 0) return [];
-
-    const sourceEventId = event.id || `${session.id}-${index}`;
-    const entry: StoredMemoryEntry = {
-      content: event.content,
-      ...(event.author ? { author: event.author } : {}),
-      ...(Number.isFinite(event.timestamp)
-        ? { timestamp: new Date(event.timestamp).toISOString() }
-        : {}),
-      tokens,
-      sourceSessionId: session.id,
-      sourceEventId,
-    };
-
-    return [{ id: entryId(session.id, sourceEventId), entry }];
-  });
-}
-
 export class MemoryService implements BaseMemoryService {
+  private memoryScopes = firestore.collection('agent_memory');
+  private maxQueryTerms = 10;
+  private maxResults = 20;
+
   async addSessionToMemory(session: Session): Promise<void> {
-    const entries = memoryEntries(session);
-    const scope = memoryScopes.doc(scopeId(session.appName, session.userId));
+    const entries = this.memoryEntries(session);
+    const scope = this.memoryScopes.doc(
+      scopeId(session.appName, session.userId),
+    );
 
     await scope.set(
       {
@@ -93,7 +66,7 @@ export class MemoryService implements BaseMemoryService {
     for (let start = 0; start < entries.length; start += 400) {
       const batch = firestore.batch();
       for (const { id, entry } of entries.slice(start, start + 400)) {
-        batch.set(collection.doc(id), entry, { merge: true });
+        batch.set(collection.doc(id), sanitizeForFirestore(entry), { merge: true });
       }
       await batch.commit();
     }
@@ -104,12 +77,12 @@ export class MemoryService implements BaseMemoryService {
     userId,
     query,
   }: SearchMemoryRequest): Promise<SearchMemoryResponse> {
-    const tokens = searchTokens(query).slice(0, maxQueryTerms);
+    const tokens = searchTokens(query).slice(0, this.maxQueryTerms);
     if (tokens.length === 0) {
       return { memories: [] };
     }
 
-    const snapshot = await memoryScopes
+    const snapshot = await this.memoryScopes
       .doc(scopeId(appName, userId))
       .collection('entries')
       .where('tokens', 'array-contains-any', tokens)
@@ -134,7 +107,7 @@ export class MemoryService implements BaseMemoryService {
             left.entry.timestamp ?? '',
           ),
       )
-      .slice(0, maxResults)
+      .slice(0, this.maxResults)
       .map(({ entry }) => ({
         content: entry.content,
         ...(entry.author ? { author: entry.author } : {}),
@@ -142,6 +115,38 @@ export class MemoryService implements BaseMemoryService {
       }));
 
     return { memories };
+  }
+
+  private entryId(sessionId: string, eventId: string) {
+    return [sanitizeDocId(sessionId), sanitizeDocId(eventId)]
+      .map(encodeURIComponent)
+      .join('__');
+  }
+
+  private memoryEntries(session: Session) {
+    return session.events.flatMap((event, index) => {
+      if (!event.content) {
+        return [];
+      }
+
+      const text = contentText(event.content);
+      const tokens = searchTokens(text);
+      if (tokens.length === 0) return [];
+
+      const sourceEventId = event.id || `${session.id}-${index}`;
+      const entry: StoredMemoryEntry = {
+        content: event.content,
+        ...(event.author ? { author: event.author } : {}),
+        ...(Number.isFinite(event.timestamp)
+          ? { timestamp: new Date(event.timestamp).toISOString() }
+          : {}),
+        tokens,
+        sourceSessionId: session.id,
+        sourceEventId,
+      };
+
+      return [{ id: this.entryId(session.id, sourceEventId), entry }];
+    });
   }
 }
 

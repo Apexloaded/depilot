@@ -20,6 +20,7 @@
     "config": "^5.0.1",
     "dotenv": "^16.6.1",
     "express": "^5.2.1",
+    "proj4": "^2.21.0",
     "winston": "^3.19.0"
   },
   "devDependencies": {

@@ -1,7 +1,18 @@
 import 'dotenv/config';
-import { LOAD_MEMORY, LlmAgent, Runner } from '@google/adk';
+import {
+  Gemini,
+  LOAD_MEMORY,
+  LlmAgent,
+  LlmSummarizer,
+  Runner,
+  TokenBasedContextCompactor,
+} from '@google/adk';
 import { sessionService, memoryService } from '../common/utils/index.js';
 import { memoryPlugin } from '../common/plugins/memory-ingestion.plugin.js';
+import { landGuardAgent } from './agents/index.js';
+import { MASTER_ORCHESTRATOR_INSTRUCTION } from './prompts/base.prompt.js';
+import { GEMINI_2_MODEL } from './models/gemini/gemini-2.js';
+import { GEMINI_3_MODEL } from './models/gemini/gemini-3.js';
 
 export class Agent {
   public name: string = 'master_orchestrator';
@@ -10,12 +21,19 @@ export class Agent {
 
   private orchestrator = new LlmAgent({
     name: this.name,
-    model: 'gemini-2.5-flash',
-    instruction: `
-    Route payment/invoice issues to billing_agent and tech bugs to tech_support_agent.
-    Use the load_memory tool when the answer may depend on previous conversations.
-  `,
+    model: GEMINI_3_MODEL._3_5_FLASH,
+    instruction: MASTER_ORCHESTRATOR_INSTRUCTION,
+    contextCompactors: [
+      new TokenBasedContextCompactor({
+        tokenThreshold: 1000,
+        eventRetentionSize: 1,
+        summarizer: new LlmSummarizer({
+          llm: new Gemini({ model: GEMINI_3_MODEL._3_5_FLASH }),
+        }),
+      }),
+    ],
     tools: [LOAD_MEMORY],
+    subAgents: [landGuardAgent],
   });
 
   constructor() {

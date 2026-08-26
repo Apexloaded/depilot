@@ -15,6 +15,7 @@ class ChatController {
       const result = await this.chatService.handleChat(req.body, {
         stream: false,
       });
+      
       res.json(result);
     } catch (error) {
       logger.error('Chat request failed', error);
