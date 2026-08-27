@@ -9,7 +9,7 @@ import {
 } from '@google/adk';
 import { sessionService, memoryService } from '../common/utils/index.js';
 import { memoryPlugin } from '../common/plugins/memory-ingestion.plugin.js';
-import { landGuardAgent } from './agents/index.js';
+import { landGuardAgent } from './sub-agents/index.js';
 import { MASTER_ORCHESTRATOR_INSTRUCTION } from './prompts/base.prompt.js';
 import { GEMINI_3_MODEL } from './models/gemini/index.js';
 

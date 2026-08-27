@@ -6,8 +6,7 @@ import {
   type Session,
 } from '@google/adk';
 import { firestore } from '@repo/firebase';
-import { sanitizeDocId } from './collection.utils.js';
-import { sanitizeForFirestore } from './firestore.sanitizer.js';
+import { sanitizeForFirestore, sanitizeDocId } from './firestore.utils.js';
 
 type StoredMemoryEntry = {
   content: MemoryEntry['content'];
@@ -66,7 +65,9 @@ export class MemoryService implements BaseMemoryService {
     for (let start = 0; start < entries.length; start += 400) {
       const batch = firestore.batch();
       for (const { id, entry } of entries.slice(start, start + 400)) {
-        batch.set(collection.doc(id), sanitizeForFirestore(entry), { merge: true });
+        batch.set(collection.doc(id), sanitizeForFirestore(entry), {
+          merge: true,
+        });
       }
       await batch.commit();
     }

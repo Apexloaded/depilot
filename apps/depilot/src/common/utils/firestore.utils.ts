@@ -5,8 +5,8 @@
 
 export function sanitizeForFirestore<T>(val: T): T {
   if (val === null || val === undefined) return val;
-  if (typeof val === "function") return undefined as unknown as T;
-  if (typeof val !== "object") return val;
+  if (typeof val === 'function') return undefined as unknown as T;
+  if (typeof val !== 'object') return val;
 
   if (Buffer.isBuffer(val)) {
     return `[base64_stripped:${val.length}bytes]` as unknown as T;
@@ -16,7 +16,11 @@ export function sanitizeForFirestore<T>(val: T): T {
     const mapped = val.map((item) => {
       if (Array.isArray(item)) {
         // If it is a coordinate pair [lng, lat], convert to object
-        if (item.length === 2 && typeof item[0] === "number" && typeof item[1] === "number") {
+        if (
+          item.length === 2 &&
+          typeof item[0] === 'number' &&
+          typeof item[1] === 'number'
+        ) {
           return { lng: item[0], lat: item[1] };
         }
         // If it is a deeper nested array, JSON stringify it
@@ -42,4 +46,8 @@ export function sanitizeForFirestore<T>(val: T): T {
     }
   }
   return result as T;
+}
+
+export function sanitizeDocId(val: string): string {
+  return encodeURIComponent(val).replace(/\./g, '%2E').replace(/\//g, '%2F');
 }

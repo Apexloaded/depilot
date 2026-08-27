@@ -276,6 +276,9 @@ importers:
       firebase-admin:
         specifier: ^14.3.0
         version: 14.3.0
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*

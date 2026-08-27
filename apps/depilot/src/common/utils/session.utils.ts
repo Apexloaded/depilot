@@ -9,7 +9,7 @@ import {
   type Session,
 } from '@google/adk';
 import { FieldValue, firestore } from '@repo/firebase';
-import { sanitizeForFirestore } from './firestore.sanitizer.js';
+import { sanitizeForFirestore } from './firestore.utils.js';
 
 type StoredSession = Session & {
   updatedAt: number;

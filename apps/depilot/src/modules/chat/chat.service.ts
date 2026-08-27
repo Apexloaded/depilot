@@ -5,7 +5,7 @@ import {
   ChatStreamChunk,
 } from './types/chat.type.js';
 import { sessionService } from '../../common/utils/index.js';
-import { agent, runner } from '../../ai/orchestrator.ai.js';
+import { agent, runner } from '../../agent/orchestrator.agent.js';
 import type { Content, Part } from '@google/genai';
 import logger from '../../common/logger/index.js';
 

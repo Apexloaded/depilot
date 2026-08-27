@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "dotenv": "^16.6.1",
-    "firebase-admin": "^14.3.0"
+    "firebase-admin": "^14.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
