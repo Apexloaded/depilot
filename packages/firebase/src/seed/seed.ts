@@ -4,6 +4,7 @@ import { seedPlots } from './data/plot.data';
 import { seedProperties } from './data/property.data';
 import { seedPropertyIdentifiers } from './data/property-identifier.data';
 import { seedUsers } from './data/user.data';
+import { seedDeal } from './data/deal.data';
 
 async function main() {
   await seedUsers();
@@ -11,6 +12,7 @@ async function main() {
   await seedProperties();
   await seedPlots();
   await seedPropertyIdentifiers();
+  await seedDeal();
 }
 
 main()

@@ -9,6 +9,7 @@ const estateSeedData: Estate[] = [
       id: 'developer-greenview',
       name: 'Greenview Developments Ltd',
     },
+    price: 50_000_000,
     status: 'ACTIVE',
     location: {
       state: 'Lagos',
@@ -52,6 +53,7 @@ const estateSeedData: Estate[] = [
       id: 'developer-hillcrest',
       name: 'Hillcrest Property Group',
     },
+    price: 20_000_000,
     status: 'PLANNING',
     location: {
       state: 'FCT',

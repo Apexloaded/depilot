@@ -3,5 +3,6 @@ export enum Collections {
     Plots = "plots",
     Deals = "deals",
     DealItems = "items",
-    Counters = "counters"
+    Counters = "counters",
+    Users = "users"
 }

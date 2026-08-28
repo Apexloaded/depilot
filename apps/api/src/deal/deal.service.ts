@@ -49,7 +49,7 @@ export class DealService {
       dto.sellerId,
     ].filter(Boolean) as string[];
 
-    const users = await userStore.findMany(allUserIds);
+    const users = await userStore.findManyById(allUserIds);
     const foundIds = new Set(users.map((u) => u.id));
 
     for (const b of dto.buyers) {

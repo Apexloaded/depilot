@@ -18,3 +18,11 @@ export const ALLOWED_INITIAL_STATUSES = new Set<DealStatus>([
   DealStatus.NEGOTIATION,
   DealStatus.OFFER_ISSUED,
 ]);
+
+// Deal statuses from which no further transitions are possible
+export const TERMINAL_DEAL_STATUSES = new Set<DealStatus>([
+  DealStatus.ALLOCATED,
+  DealStatus.DOCUMENTED,
+  DealStatus.CANCELLED,
+  DealStatus.LOST,
+]);

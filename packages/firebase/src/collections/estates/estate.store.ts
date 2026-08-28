@@ -1,10 +1,11 @@
 import { firestore } from '../../config/firebase.config';
+import { Collections } from '../collections';
+import { plotStore } from '../plots/plot.store';
 import { type CreateEstateInput, type UpdateEstateInput } from './estate.type';
 import { parseEstate } from './estate.utils';
 import { estateSchema, type Estate } from './schemas';
 
-const estatesCollection = firestore.collection('estates');
-
+const estatesCollection = firestore.collection(Collections.Estates);
 class EstateStore {
   async create(input: CreateEstateInput): Promise<Estate> {
     const estateReference = estatesCollection.doc();
@@ -18,6 +19,19 @@ class EstateStore {
 
     await estateReference.set(estate);
     return estate;
+  }
+
+  async getEstateByPlotId(plotId: string): Promise<Estate | null> {
+    const plot = await plotStore.getPlot(plotId);
+    if (!plot) {
+      throw new Error(`Plot ${plotId} does not exist`);
+    }
+
+    if (!plot.estateId) {
+      throw new Error(`Plot ${plotId} does not have an estateId`);
+    }
+
+    return this.read(plot.estateId);
   }
 
   async read(id: string): Promise<Estate | null> {

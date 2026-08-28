@@ -1,5 +1,7 @@
 import { firestore } from '../../config/firebase.config';
 import { Collections } from '../collections';
+import { estateStore } from '../estates';
+import { parsePlot } from '../plots/plot.utils';
 import {
   type DealWithItems,
   type CreateDealInput,
@@ -21,63 +23,76 @@ class DealStore {
   async create(input: CreateDealInput): Promise<DealWithItems> {
     return firestore.runTransaction(async (tx) => {
       const dealReference = dealsCollection.doc();
-      const dealItemsCollection = dealReference.collection(Collections.DealItems);
-
       const id = dealReference.id;
       const now = new Date();
-      const dealNumber = this.getNextSequentialNumber();
+
+      const dealNumber = await this.getNextSequentialNumber();
       const dealItems = input.items ?? [];
+      const itemDataMap = new Map<
+        number,
+        { listPrice: number; agreedPrice: number }
+      >();
 
-      let totalListPrice = 0;
-      let totalAgreedPrice = 0;
+      const dealItemsCollection = dealReference.collection(
+        Collections.DealItems,
+      );
 
-      if (dealItems.length) {
-        for (const [index, item] of dealItems.entries()) {
-          // Validate item references
-          if (item.itemType === DealItemType.PLOT && !item.plotId) {
-            throw new Error('plotId required for PLOT item');
-          }
-          if (item.itemType === DealItemType.HOUSE && !item.propertyId) {
-            throw new Error('propertyId required for HOUSE item');
-          }
-
-          if (item.plotId) {
-            // Get existing deal items and plot
-            const plotRef = plotsCollection.doc(item.plotId);
-            const [plotSnapshot, dealItemSnapshot] = await Promise.all([
-              tx.get(plotRef),
-              tx.get(
-                dealItemsCollection
-                  .where('status', '==', DealItemStatus.RESERVED)
-                  .where('plotId', '==', item.plotId)
-                  .limit(1),
-              ),
-            ]);
-            if (!plotSnapshot.exists) {
-              throw new Error(`Plot ${item.plotId} does not exist`);
-            }
-            if (dealItemSnapshot.size > 0) {
-              throw new Error(`Plot ${item.plotId} is already reserved`);
-            }
-
-            const plot = plotSnapshot.data();
-            if (!plot) {
-              throw new Error(`Plot ${item.plotId} does not exist`);
-            }
-
-            totalListPrice += plot.price;
-          }
-
-          totalAgreedPrice += item.agreedPrice ?? totalListPrice;
+      for (const [index, item] of dealItems.entries()) {
+        // Validate item references
+        if (item.itemType === DealItemType.PLOT && !item.plotId) {
+          throw new Error('plotId required for PLOT item');
         }
+        if (item.itemType === DealItemType.HOUSE && !item.propertyId) {
+          throw new Error('propertyId required for HOUSE item');
+        }
+
+        let itemListPrice = 0;
+
+        if (item.plotId) {
+          // Get existing deal items and plot
+          const plotRef = plotsCollection.doc(item.plotId);
+          const reservedQuery = dealItemsCollection
+            .where('status', '==', DealItemStatus.RESERVED)
+            .where('plotId', '==', item.plotId)
+            .limit(1);
+
+          const [plotSnapshot, dealItemSnapshot] = await Promise.all([
+            tx.get(plotRef),
+            tx.get(reservedQuery),
+          ]);
+
+          if (!plotSnapshot.exists) {
+            throw new Error(`Plot ${item.plotId} does not exist`);
+          }
+          if (dealItemSnapshot.size > 0) {
+            throw new Error(`Plot ${item.plotId} is already reserved`);
+          }
+
+          const plot = parsePlot(item.plotId, plotSnapshot.data() ?? {});
+          if (!plot) {
+            throw new Error(`Plot ${item.plotId} does not exist`);
+          }
+
+          const estate = await estateStore.getEstateByPlotId(item.plotId);
+          const plotPrice = estate?.price ?? 0;
+
+          itemListPrice = plotPrice;
+        }
+
+        itemDataMap.set(index, {
+          listPrice: itemListPrice,
+          agreedPrice: item.agreedPrice ?? itemListPrice,
+        });
       }
 
-      const itemsWithReferences = dealItems.map((item) => {
+      const itemsWithReferences = dealItems.map((item, index) => {
         const itemReference = dealItemsCollection.doc();
+        const listPrice = itemDataMap.get(index)?.listPrice ?? 0;
         const parsedItem = dealItemSubcollectionSchema.parse({
           ...item,
           id: itemReference.id,
           dealId: id,
+          listPrice,
           createdAt: now,
         });
 
@@ -85,6 +100,14 @@ class DealStore {
       });
 
       const items = itemsWithReferences.map(({ item }) => item);
+      const totalListPrice = Array.from(itemDataMap.values()).reduce(
+        (sum, item) => sum + item.listPrice,
+        0,
+      );
+      const totalAgreedPrice = Array.from(itemDataMap.values()).reduce(
+        (sum, item) => sum + item.agreedPrice,
+        0,
+      );
       const deal = dealDocumentSchema.parse({
         ...input.deal,
         id,
@@ -100,14 +123,12 @@ class DealStore {
         updatedAt: now,
       });
 
-      const batch = firestore.batch();
-      batch.set(dealReference, deal);
+      tx.set(dealReference, deal);
 
       for (const { item, reference } of itemsWithReferences) {
-        batch.set(reference, item);
+        tx.set(reference, item);
       }
 
-      await batch.commit();
       return { deal, items };
     });
   }
@@ -150,7 +171,9 @@ class DealStore {
 
     let items = current.items;
     if (input.items) {
-      const itemCollection = dealsCollection.doc(id).collection(Collections.DealItems);
+      const itemCollection = dealsCollection
+        .doc(id)
+        .collection(Collections.DealItems);
       for (const item of current.items) {
         batch.delete(itemCollection.doc(item.id));
       }

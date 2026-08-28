@@ -11,6 +11,7 @@ export const estateSchema = z.object({
     id: z.string(),
     name: z.string(),
   }),
+  price: z.number().default(0),
   status: z.enum(['PLANNING', 'ACTIVE', 'SOLD_OUT', 'SUSPENDED', 'ARCHIVED']),
   location: estateLocationSchema,
   landInformation: landInformationSchema,
