@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { propertySchema } from './property.schema';
+import { buyerSchema } from './buyer.schema';
 
 export const transactionSchema = z.object({
   id: z.string(),
@@ -15,20 +17,9 @@ export const transactionSchema = z.object({
     'CANCELLED',
   ]),
 
-  buyer: z.object({
-    id: z.string().optional(),
-    fullName: z.string(),
-    email: z.email().optional(),
-    phone: z.string().optional(),
-  }),
+  buyer: buyerSchema,
 
-  property: z.object({
-    id: z.string().optional(),
-    estateName: z.string(),
-    block: z.string().optional(),
-    plotNumber: z.string().optional(),
-    size: z.string().optional(),
-  }),
+  property: propertySchema,
 
   financials: z.object({
     agreedPrice: z.number().positive(),
@@ -63,4 +54,3 @@ export const transactionSchema = z.object({
 });
 
 export type Transaction = z.infer<typeof transactionSchema>;
-

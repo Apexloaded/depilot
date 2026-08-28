@@ -1,0 +1,1 @@
+export const DOCUMENT_READER_INSTRUCTION = ``;

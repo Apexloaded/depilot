@@ -16,7 +16,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "seed": "tsx src/seed/seed.ts"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.19.3",
+    "tsx": "^4.20.3",
     "typescript": "5.5.4"
   }
 }
