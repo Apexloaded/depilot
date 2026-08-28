@@ -1,5 +1,5 @@
 import { firestore } from '../../config/firebase.config';
-import { userSchema, type User } from '../../collections/users/schemas';
+import { UserRole, userSchema, type User } from '../../collections/users/schemas';
 
 const userSeedData: User[] = [
   {
@@ -7,7 +7,7 @@ const userSeedData: User[] = [
     firstName: 'Amara',
     lastName: 'Okafor',
     email: 'amara.okafor@eplotone.example',
-    role: 'ADMIN',
+    role: UserRole.ADMIN,
     createdAt: new Date('2026-01-05T09:00:00.000Z'),
   },
   {
@@ -15,7 +15,7 @@ const userSeedData: User[] = [
     firstName: 'Tunde',
     lastName: 'Adeyemi',
     email: 'tunde.adeyemi@eplotone.example',
-    role: 'SURVEYOR',
+    role: UserRole.SURVEYOR,
     createdAt: new Date('2026-01-06T09:00:00.000Z'),
   },
   {
@@ -23,7 +23,7 @@ const userSeedData: User[] = [
     firstName: 'Femi',
     lastName: 'Oyalede',
     email: 'femi.oyalede@eplotone.example',
-    role: 'CLIENT',
+    role: UserRole.CLIENT,
     createdAt: new Date('2026-01-03T09:00:00.000Z'),
   },
 ];

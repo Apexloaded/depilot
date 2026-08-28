@@ -16,6 +16,7 @@
     }
   },
   "scripts": {
+    "dev": "pnpm build --watch",
     "build": "tsc -p tsconfig.json",
     "seed": "tsx src/seed/seed.ts"
   },

@@ -1,6 +1,15 @@
 import { z } from 'zod';
 import { locationSchema } from '../../../schemas';
 
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  OPERATIONS = 'OPERATIONS',
+  LAWYER = 'LAWYER',
+  SURVEYOR = 'SURVEYOR',
+  SALES_AGENT = 'SALES_AGENT',
+  CLIENT = 'CLIENT',
+}
+
 export const userSchema = z.object({
   id: z.string(),
   firstName: z.string(),
@@ -8,14 +17,7 @@ export const userSchema = z.object({
   email: z.email(),
   phoneNumber: z.string().optional(),
   address: locationSchema.nullable().optional(),
-  role: z.enum([
-    'ADMIN',
-    'OPERATIONS',
-    'LAWYER',
-    'SURVEYOR',
-    'SALES_AGENT',
-    'CLIENT',
-  ]),
+  role: z.enum(UserRole),
   createdAt: z.date(),
   updatedAt: z.date().optional(),
 });

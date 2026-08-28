@@ -3,15 +3,12 @@ import { z } from 'zod';
 // ============================================================
 // ENUMS
 // ============================================================
-
-export const DealPaymentScheduleTypeEnum = z.enum([
-  'PLOT_PURCHASE',
-  'DOCUMENTATION',
-  'OTHERS',
-]);
-export type DealPaymentScheduleType = z.infer<
-  typeof DealPaymentScheduleTypeEnum
->;
+export enum DealPaymentScheduleType {
+  PLOT_PURCHASE = 'PLOT_PURCHASE',
+  DOCUMENTATION = 'DOCUMENTATION',
+  OTHERS = 'OTHERS',
+}
+export const DealPaymentScheduleTypeEnum = z.enum(DealPaymentScheduleType);
 
 /**
  * DealPaymentSchedule Document Schema
@@ -26,7 +23,9 @@ export const DealPaymentScheduleSchema = z.object({
   downPaymentAmount: z.number().nonnegative(),
   installmentAmount: z.number().nonnegative(),
   totalPaid: z.number().nonnegative().default(0),
-  type: DealPaymentScheduleTypeEnum.default('PLOT_PURCHASE'),
+  type: DealPaymentScheduleTypeEnum.default(
+    DealPaymentScheduleType.PLOT_PURCHASE,
+  ),
   balance: z.number(),
 
   startDate: z.date(),

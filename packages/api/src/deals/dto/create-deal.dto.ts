@@ -64,10 +64,6 @@ export class CreateDealDto {
   agentId?: string;
 
   @IsOptional()
-  @IsUUID()
-  leadId?: string;
-
-  @IsOptional()
   @IsString()
   source?: string;
 
@@ -106,7 +102,7 @@ export class CreateDealDto {
       'initialStatus must be one of: ENQUIRY, NEGOTIATION, OFFER_ISSUED. ' +
       'Deals cannot be created as CONTRACTED, COMPLETED, CANCELLED, or LOST.',
   })
-  stage?: DealStatus = DealStatus.ENQUIRY;
+  stage: DealStatus = DealStatus.ENQUIRY;
 
   @IsOptional()
   @IsArray()

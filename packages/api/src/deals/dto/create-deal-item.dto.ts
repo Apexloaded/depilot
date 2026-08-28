@@ -16,7 +16,7 @@ import { DealItemType } from '@repo/firebase';
 
 export class CreateDealItemDto {
   @IsEnum(DealItemType)
-  itemType: DealItemType;
+  itemType!: DealItemType;
 
   @IsOptional()
   @IsUUID()
@@ -29,14 +29,6 @@ export class CreateDealItemDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @IsPositive()
   agreedPrice!: number;
-
-  @IsOptional()
-  @IsDateString()
-  reservedUntil?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  resale?: boolean = false;
 
   @IsOptional()
   @IsString()

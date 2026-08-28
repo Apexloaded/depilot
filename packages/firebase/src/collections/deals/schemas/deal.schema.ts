@@ -6,14 +6,14 @@ import { embeddedBuyerSummarySchema } from './deal-buyer.schema';
 // ============================================================
 
 export enum DealStatus {
-  ENQUIRY = 'ENQUIRY',
-  NEGOTIATION = 'NEGOTIATION',
-  OFFER_ISSUED = 'OFFER_ISSUED',
-  SUBSCRIBED = 'SUBSCRIBED',
-  ALLOCATED = 'ALLOCATED',
-  DOCUMENTED = 'DOCUMENTED',
-  CANCELLED = 'CANCELLED',
-  LOST = 'LOST',
+  ENQUIRY = "ENQUIRY",
+  NEGOTIATION = "NEGOTIATION",
+  OFFER_ISSUED = "OFFER_ISSUED",
+  SUBSCRIBED = "SUBSCRIBED",
+  ALLOCATED = "ALLOCATED",
+  DOCUMENTED = "DOCUMENTED",
+  CANCELLED = "CANCELLED",
+  LOST = "LOST",
 }
 export const dealStatusEnum = z.enum(DealStatus);
 
@@ -33,7 +33,6 @@ export const dealDocumentSchema = z.object({
 
   sellerId: z.string().nullable().optional(),
   agentId: z.string().nullable().optional(),
-  leadId: z.string().nullable().optional(),
 
   // Financial aggregates calculated on write
   totalListPrice: z.number().positive(),

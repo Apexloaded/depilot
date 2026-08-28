@@ -1,69 +1,115 @@
 import { firestore } from '../../config/firebase.config';
+import { Collections } from '../collections';
 import {
   type DealWithItems,
   type CreateDealInput,
   type UpdateDealInput,
 } from './deal.type';
 import { parseDealItem, parseDeal } from './deal.utils';
-import { dealDocumentSchema, dealItemSubcollectionSchema } from './schemas';
+import {
+  dealDocumentSchema,
+  DealItemStatus,
+  dealItemSubcollectionSchema,
+  DealItemType,
+} from './schemas';
 
-const dealsCollection = firestore.collection('deals');
+const dealsCollection = firestore.collection(Collections.Deals);
+const countersCollection = firestore.collection(Collections.Counters);
+const plotsCollection = firestore.collection(Collections.Plots);
 
 class DealStore {
   async create(input: CreateDealInput): Promise<DealWithItems> {
-    const dealReference = dealsCollection.doc();
-    const id = dealReference.id;
-    const now = new Date();
+    return firestore.runTransaction(async (tx) => {
+      const dealReference = dealsCollection.doc();
+      const dealItemsCollection = dealReference.collection(Collections.DealItems);
 
-    const itemsWithReferences = input.items.map((item) => {
-      const itemReference = dealReference.collection('items').doc();
-      const parsedItem = dealItemSubcollectionSchema.parse({
-        ...item,
-        id: itemReference.id,
-        dealId: id,
-        createdAt: now,
+      const id = dealReference.id;
+      const now = new Date();
+      const dealNumber = this.getNextSequentialNumber();
+      const dealItems = input.items ?? [];
+
+      let totalListPrice = 0;
+      let totalAgreedPrice = 0;
+
+      if (dealItems.length) {
+        for (const [index, item] of dealItems.entries()) {
+          // Validate item references
+          if (item.itemType === DealItemType.PLOT && !item.plotId) {
+            throw new Error('plotId required for PLOT item');
+          }
+          if (item.itemType === DealItemType.HOUSE && !item.propertyId) {
+            throw new Error('propertyId required for HOUSE item');
+          }
+
+          if (item.plotId) {
+            // Get existing deal items and plot
+            const plotRef = plotsCollection.doc(item.plotId);
+            const [plotSnapshot, dealItemSnapshot] = await Promise.all([
+              tx.get(plotRef),
+              tx.get(
+                dealItemsCollection
+                  .where('status', '==', DealItemStatus.RESERVED)
+                  .where('plotId', '==', item.plotId)
+                  .limit(1),
+              ),
+            ]);
+            if (!plotSnapshot.exists) {
+              throw new Error(`Plot ${item.plotId} does not exist`);
+            }
+            if (dealItemSnapshot.size > 0) {
+              throw new Error(`Plot ${item.plotId} is already reserved`);
+            }
+
+            const plot = plotSnapshot.data();
+            if (!plot) {
+              throw new Error(`Plot ${item.plotId} does not exist`);
+            }
+
+            totalListPrice += plot.price;
+          }
+
+          totalAgreedPrice += item.agreedPrice ?? totalListPrice;
+        }
+      }
+
+      const itemsWithReferences = dealItems.map((item) => {
+        const itemReference = dealItemsCollection.doc();
+        const parsedItem = dealItemSubcollectionSchema.parse({
+          ...item,
+          id: itemReference.id,
+          dealId: id,
+          createdAt: now,
+        });
+
+        return { item: parsedItem, reference: itemReference };
       });
 
-      return { item: parsedItem, reference: itemReference };
+      const items = itemsWithReferences.map(({ item }) => item);
+      const deal = dealDocumentSchema.parse({
+        ...input.deal,
+        id,
+        dealNumber,
+        totalListPrice,
+        totalAgreedPrice,
+        discountAmount:
+          totalAgreedPrice === null
+            ? 0
+            : Math.max(totalListPrice - totalAgreedPrice, 0),
+        itemCount: items.length,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const batch = firestore.batch();
+      batch.set(dealReference, deal);
+
+      for (const { item, reference } of itemsWithReferences) {
+        batch.set(reference, item);
+      }
+
+      await batch.commit();
+      return { deal, items };
     });
-
-    const items = itemsWithReferences.map(({ item }) => item);
-    const totalListPrice = items.reduce(
-      (total, item) => total + item.listPrice,
-      0,
-    );
-    const agreedPrices = items
-      .map((item) => item.agreedPrice)
-      .filter(
-        (price): price is number => price !== null && price !== undefined,
-      );
-    const totalAgreedPrice = agreedPrices.length
-      ? agreedPrices.reduce((total, price) => total + price, 0)
-      : null;
-
-    const deal = dealDocumentSchema.parse({
-      ...input.deal,
-      id,
-      totalListPrice,
-      totalAgreedPrice,
-      discountAmount:
-        totalAgreedPrice === null
-          ? 0
-          : Math.max(totalListPrice - totalAgreedPrice, 0),
-      itemCount: items.length,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const batch = firestore.batch();
-    batch.set(dealReference, deal);
-
-    for (const { item, reference } of itemsWithReferences) {
-      batch.set(reference, item);
-    }
-
-    await batch.commit();
-    return { deal, items };
   }
 
   async read(id: string): Promise<DealWithItems | null> {
@@ -75,7 +121,7 @@ class DealStore {
 
     const itemSnapshot = await dealsCollection
       .doc(id)
-      .collection('items')
+      .collection(Collections.DealItems)
       .get();
 
     return {
@@ -104,7 +150,7 @@ class DealStore {
 
     let items = current.items;
     if (input.items) {
-      const itemCollection = dealsCollection.doc(id).collection('items');
+      const itemCollection = dealsCollection.doc(id).collection(Collections.DealItems);
       for (const item of current.items) {
         batch.delete(itemCollection.doc(item.id));
       }
@@ -156,7 +202,7 @@ class DealStore {
   async delete(id: string): Promise<void> {
     const itemSnapshot = await dealsCollection
       .doc(id)
-      .collection('items')
+      .collection(Collections.DealItems)
       .get();
     const batch = firestore.batch();
 
@@ -166,6 +212,24 @@ class DealStore {
 
     batch.delete(dealsCollection.doc(id));
     await batch.commit();
+  }
+
+  /** Generates an atomic sequential deal number like DEAL-2026-00042 */
+  private async getNextSequentialNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const counterRef = countersCollection.doc(`deals_${year}`);
+
+    return await firestore.runTransaction(async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      const currentVal = counterDoc.exists
+        ? (counterDoc.data()?.currentVal ?? 0)
+        : 0;
+      const nextVal = currentVal + 1;
+
+      transaction.set(counterRef, { currentVal: nextVal }, { merge: true });
+
+      return `DEAL-${year}-${String(nextVal).padStart(5, '0')}`;
+    });
   }
 }
 
