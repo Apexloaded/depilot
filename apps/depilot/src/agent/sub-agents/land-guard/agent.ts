@@ -3,9 +3,10 @@ import { LlmAgent } from '@google/adk';
 import { LAND_GUARD_INSTRUCTION } from './prompts/lang-guard.prompt.js';
 import { landGuardTools } from './tools/index.js';
 import { GEMINI_3_MODEL } from '../../models/gemini/index.js';
+import { Agents } from '@repo/firebase';
 
 export class LandGuardAgent {
-  public name: string = 'land_guard_agent';
+  public name: string = Agents.LAND_GUARD;
   agent: LlmAgent;
 
   constructor() {

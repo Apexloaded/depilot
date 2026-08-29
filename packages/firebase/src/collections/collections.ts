@@ -4,5 +4,6 @@ export enum Collections {
     Deals = "deals",
     DealItems = "items",
     Counters = "counters",
-    Users = "users"
+    Users = "users",
+    Workflows = "workflows"
 }

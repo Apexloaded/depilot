@@ -122,7 +122,9 @@ export class ChatService {
 
   private textFromParts(parts?: Part[]) {
     return (parts ?? [])
-      .flatMap((p) => ('text' in p && p.text ? [p.text] : []))
+      .flatMap((p) =>
+        'text' in p && p.text && !p.thought ? [p.text] : [],
+      )
       .join('')
       .trim();
   }

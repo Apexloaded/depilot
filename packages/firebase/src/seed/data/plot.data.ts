@@ -1,5 +1,8 @@
 import { firestore } from '../../config/firebase.config';
-import { plotSchema, type Plot } from '../../schemas/plot.schema';
+import {
+  type Plot,
+  plotSchema,
+} from '../../collections/plots/schemas/plot.schema';
 
 const plotSeedData: Plot[] = [
   {

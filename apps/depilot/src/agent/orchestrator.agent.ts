@@ -12,9 +12,18 @@ import { memoryPlugin } from '../common/plugins/memory-ingestion.plugin.js';
 import { landGuardAgent } from './sub-agents/index.js';
 import { MASTER_ORCHESTRATOR_INSTRUCTION } from './prompts/base.prompt.js';
 import { GEMINI_3_MODEL } from './models/gemini/index.js';
+import {
+  extractDealNumberFromRequest,
+  primeRequestContext,
+  resolveOrCreateWorkflow,
+} from './callbacks/index.js';
+import { checkWorkflowTool } from './tools/check-workflow.tool.js';
+import { beforeToolCallbackCheckWorkflowStatus } from './callbacks/before-tool.callback.js';
+import { Agents } from '@repo/firebase';
+import { dealPilotAgent } from './sub-agents/deal-pilot/agent.js';
 
 export class Agent {
-  public name: string = 'master_orchestrator';
+  public name: string = Agents.MASTER_ORCHESTRATOR;
 
   private agent: Runner;
 
@@ -22,17 +31,28 @@ export class Agent {
     name: this.name,
     model: GEMINI_3_MODEL._3_5_FLASH,
     instruction: MASTER_ORCHESTRATOR_INSTRUCTION,
+    generateContentConfig: {
+      thinkingConfig: {
+        includeThoughts: false,
+      },
+    },
     contextCompactors: [
       new TokenBasedContextCompactor({
         tokenThreshold: 1000,
-        eventRetentionSize: 1,
+        eventRetentionSize: 5,
         summarizer: new LlmSummarizer({
           llm: new Gemini({ model: GEMINI_3_MODEL._3_5_FLASH }),
         }),
       }),
     ],
-    tools: [LOAD_MEMORY],
-    subAgents: [landGuardAgent],
+    beforeAgentCallback: [
+      primeRequestContext,
+      extractDealNumberFromRequest,
+      resolveOrCreateWorkflow,
+    ],
+    beforeToolCallback: [beforeToolCallbackCheckWorkflowStatus],
+    tools: [checkWorkflowTool, LOAD_MEMORY],
+    subAgents: [landGuardAgent, dealPilotAgent],
   });
 
   constructor() {

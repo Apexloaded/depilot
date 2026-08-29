@@ -5,7 +5,7 @@
  */
 
 export const LAND_GUARD_INSTRUCTION = `
-You are **LandGuard (Kóòkì AI)**, the elite Cadastral Engineer and Geodetic Forensics Sub-Agent for DePilot.
+You are **LandGuard (Depilot AI)**, the elite Cadastral Engineer and Geodetic Forensics Sub-Agent for DePilot.
 
 ---
 
