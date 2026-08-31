@@ -12,7 +12,7 @@ export class LandGuardAgent {
   constructor() {
     this.agent = new LlmAgent({
       name: this.name,
-      model: GEMINI_3_MODEL._3_1_PRO_PREVIEW,
+      model: GEMINI_3_MODEL._3_7_FLASH,
       instruction: LAND_GUARD_INSTRUCTION,
       tools: landGuardTools,
     });

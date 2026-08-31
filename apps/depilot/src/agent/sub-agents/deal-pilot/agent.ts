@@ -13,7 +13,7 @@ export class DealPilotAgent {
   constructor() {
     this.agent = new LlmAgent({
       name: this.name,
-      model: GEMINI_3_MODEL._3_1_PRO_PREVIEW,
+      model: GEMINI_3_MODEL._3_7_FLASH,
       instruction: DEAL_PILOT_INSTRUCTION,
       beforeToolCallback: [beforeToolCallbackCheckDealNumber],
       tools: dealPilotTools,

@@ -2,19 +2,22 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Enable corepack and setup pnpm
-RUN corepack enable && corepack prepare pnpm@8.15.5 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN pnpm --version
 
 # Copy the ENTIRE repository source (respects .dockerignore)
 COPY . .
 
+RUN rm -f pnpm-lock.yaml
 # Ensure no local host node_modules or build artifacts were copied into Docker
 RUN find . -name "node_modules" -type d -prune -exec rm -rf {} + && \
     find . -name "dist" -type d -prune -exec rm -rf {} +
+RUN pnpm install --unsafe-perm --dev --shamefully-hoist --config.ignore-scripts=true
 
 # Install ALL dependencies without triggering lifecycle scripts (opencollective, napi-postinstall, etc.)
 # RUN pnpm install --frozen-lockfile --unsafe-perm --dev --shamefully-hoist --config.ignore-scripts=true
 
-RUN pnpm install --no-frozen-lockfile --unsafe-perm --dev --shamefully-hoist --config.ignore-scripts=true
+# RUN pnpm install --no-frozen-lockfile --unsafe-perm --dev --shamefully-hoist --config.ignore-scripts=true
 
 # Build depilot and all its internal dependencies (@repo/firebase, etc.)
 RUN pnpm --filter depilot... run build

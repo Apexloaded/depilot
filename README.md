@@ -18,7 +18,7 @@ flowchart TD
   User[Judge / Operator] -->|POST /chat or /stream| Express[Express service on Cloud Run]
   Express --> Chat[ChatService]
   Chat --> Runner[Google ADK Runner]
-  Runner --> Orchestrator[Master Orchestrator<br/>Gemini 3.5 Flash]
+  Runner --> Orchestrator[Master Orchestrator<br/>Gemini 3.7]
   Orchestrator --> Guard[Workflow callbacks<br/>classification, state, safety gates]
   Guard --> Firestore[(Cloud Firestore<br/>sessions, memory, workflows, deals)]
   Orchestrator --> LandGuard[LandGuard sub-agent<br/>Gemini 3.1 Pro Preview]

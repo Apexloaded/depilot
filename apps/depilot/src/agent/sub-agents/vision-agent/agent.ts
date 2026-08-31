@@ -7,7 +7,7 @@ type JsonSchema = Record<string, any>;
 
 export class VisionAgent {
   private client: GoogleGenAI;
-  private model: string = GEMINI_3_MODEL._3_1_PRO_PREVIEW;
+  private model: string = GEMINI_3_MODEL._3_7_FLASH;
 
   constructor() {
     this.client = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });

@@ -30,7 +30,7 @@ export class Agent {
 
   orchestrator = new LlmAgent({
     name: this.name,
-    model: GEMINI_3_MODEL._3_5_FLASH,
+    model: GEMINI_3_MODEL._3_7_FLASH,
     instruction: MASTER_ORCHESTRATOR_INSTRUCTION,
     generateContentConfig: {
       thinkingConfig: {
