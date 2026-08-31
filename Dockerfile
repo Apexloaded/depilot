@@ -1,35 +1,40 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Enable corepack and setup pnpm
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-RUN pnpm --version
 
-# Copy the ENTIRE repository source (respects .dockerignore)
-COPY . .
+# Copy dependency manifests first so Docker can cache installs correctly.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/depilot/package.json apps/depilot/package.json
+COPY packages/firebase/package.json packages/firebase/package.json
 
-RUN rm -f pnpm-lock.yaml
-# Ensure no local host node_modules or build artifacts were copied into Docker
-RUN find . -name "node_modules" -type d -prune -exec rm -rf {} + && \
-    find . -name "dist" -type d -prune -exec rm -rf {} +
+RUN pnpm install
 
-# Install ALL dependencies without triggering lifecycle scripts (opencollective, napi-postinstall, etc.)
-RUN pnpm install --frozen-lockfile --unsafe-perm --dev --shamefully-hoist --config.ignore-scripts=true
+# Copy only the app and package sources needed for the production service.
+COPY tsconfig.base.json ./tsconfig.base.json
+COPY apps/depilot apps/depilot
+COPY packages/firebase packages/firebase
 
-# Build depilot and all its internal dependencies (@repo/firebase, etc.)
 RUN pnpm --filter @repo/firebase build && pnpm --filter depilot build
 
-# Production runtime image
 FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=8080
 
-COPY --from=builder /app/apps/depilot/package.json ./package.json
-COPY --from=builder /app/apps/depilot/dist ./dist
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/depilot/package.json ./apps/depilot/package.json
+COPY --from=builder /app/apps/depilot/dist ./apps/depilot/dist
+COPY --from=builder /app/packages/firebase/package.json ./packages/firebase/package.json
+COPY --from=builder /app/packages/firebase/dist ./packages/firebase/dist
+
+WORKDIR /app/apps/depilot
 
 EXPOSE 8080
 
