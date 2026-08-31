@@ -1,23 +1,16 @@
 {
-  "name": "ePlotOne",
-  "version": "0.0.0",
+  "name": "depilot",
+  "version": "1.0.0",
   "private": true,
-  "description": "",
-  "author": "",
-  "license": "UNLICENSED",
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "test:e2e": "turbo run test:e2e",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "dev": "pnpm --parallel --filter @repo/firebase --filter depilot dev",
+    "build": "pnpm --filter @repo/firebase build && pnpm --filter depilot build",
+    "start": "pnpm --filter depilot start",
+    "typecheck": "pnpm --filter @repo/firebase build && pnpm --filter depilot typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
-    "prettier": "^3.2.5",
-    "turbo": "^2.10.11"
+    "prettier": "^3.2.5"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {

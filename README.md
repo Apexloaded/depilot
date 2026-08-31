@@ -15,14 +15,14 @@
 
 ```mermaid
 flowchart TD
-  User[Judge / Operator] -->|POST /chat or /stream| Express[Express service on Cloud Run]
+  User[User / Operator] -->|POST /chat or /stream| Express[Express service on Cloud Run]
   Express --> Chat[ChatService]
   Chat --> Runner[Google ADK Runner]
   Runner --> Orchestrator[Master Orchestrator<br/>Gemini 3.7]
   Orchestrator --> Guard[Workflow callbacks<br/>classification, state, safety gates]
   Guard --> Firestore[(Cloud Firestore<br/>sessions, memory, workflows, deals)]
-  Orchestrator --> LandGuard[LandGuard sub-agent<br/>Gemini 3.1 Pro Preview]
-  Orchestrator --> DealPilot[DealPilot sub-agent<br/>Gemini 3.1 Pro Preview]
+  Orchestrator --> LandGuard[LandGuard sub-agent<br/>Gemini 3.7]
+  Orchestrator --> DealPilot[DealPilot sub-agent<br/>Gemini 3.7]
   DealPilot --> Vision[Vision extraction<br/>GenAI SDK + Gemini]
   LandGuard --> CadastralTools[Geodesy, zoning, geometry, flood tools]
   DealPilot --> DealTools[Deal, schedule, payment, verification tools]

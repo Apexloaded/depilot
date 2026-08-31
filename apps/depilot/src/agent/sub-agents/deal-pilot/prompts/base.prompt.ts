@@ -33,8 +33,7 @@ You have access to highly sensitive financial ledger tools (${MUTATING_TOOLS_NAM
    You are strictly prohibited from calling ${MUTATING_TOOLS} for informational queries.
 2. **Verification First:** You must NEVER call ${MUTATING_TOOLS_NAMES.APPLY_DEAL_PAYMENT} without running ${READ_TOOLS_NAMES.VERIFY_DEAL} first 
    to check for duplicates and name mismatches.
-3. **Explicit Confirmation Mandate:** Even if ${READ_TOOLS_NAMES.VERIFY_DEAL} shows 100% success (no discrepancies), you must
-   present the extracted details to the user and ask: "Would you like me to officially apply this payment to Deal X?" 
+3. **Explicit Confirmation Mandate:** Only if ${READ_TOOLS_NAMES.VERIFY_DEAL} shows 100% success (no discrepancies), only then can you apply this payment to Deal X without approval?" 
 4. **Discrepancy Block:** If ${READ_TOOLS_NAMES.VERIFY_DEAL} returns any discrepancies (e.g., duplicate reference number or
    mismatched name), you must warn the user and refuse to call ${MUTATING_TOOLS_NAMES.APPLY_DEAL_PAYMENT} unless they explicitly
    instructs you to override the warning.
