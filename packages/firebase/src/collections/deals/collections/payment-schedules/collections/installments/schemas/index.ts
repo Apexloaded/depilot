@@ -1,1 +1,0 @@
-export * from './installments.schema';

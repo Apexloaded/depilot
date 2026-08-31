@@ -19,7 +19,7 @@ export async function beforeToolCallbackCheckWorkflowStatus(params: {
     if (!sessionWorkflowId) {
       logger.warn(
         '[beforeToolCallback] trying to access a tool without a workflow',
-        { tool: tool.name },
+        { tool: tool.name }
       );
       return {
         error: true,
@@ -39,7 +39,7 @@ export async function beforeToolCallbackCheckWorkflowStatus(params: {
     const shouldHalt = determineHaltAction(tool.name, workflow);
     if (shouldHalt) {
       logger.info(
-        `[BeforeToolCallback]: Halting ${tool.name} for ${workflow.id}: ${shouldHalt.error}`,
+        `[BeforeToolCallback]: Halting ${tool.name} for ${workflow.id}: ${shouldHalt.error}`
       );
       return {
         error: true,

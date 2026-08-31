@@ -28,3 +28,5 @@ export function extractDealNumberFromText(message: string): string | undefined {
     `);
   }
 }
+
+export const matchDealNumberRegex = /DEAL-\d{4}-\d{5}/;

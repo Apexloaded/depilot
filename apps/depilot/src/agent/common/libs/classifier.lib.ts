@@ -43,12 +43,12 @@ export class WorkflowClassifier {
   classifyWithPrefilter(params: {
     rawInput: string;
     hasDealNumber: boolean;
-    hasImageAttachment: boolean;
+    hasAttachment: boolean;
   }): PrefilterResult {
-    const { rawInput, hasDealNumber, hasImageAttachment } = params;
+    const { rawInput, hasDealNumber, hasAttachment } = params;
 
     const dealSignal = hasDealNumber || DEAL_SIGNALS.test(rawInput);
-    const landSignal = LAND_SIGNALS.test(rawInput) || hasImageAttachment; // images are usually survey/payment evidence
+    const landSignal = LAND_SIGNALS.test(rawInput) || hasAttachment; // images are usually survey/payment evidence
 
     if (dealSignal && landSignal)
       return WorkflowType.HYBRID_VERIFICATION_WORKFLOW; // could be HYBRID — let the LLM decide

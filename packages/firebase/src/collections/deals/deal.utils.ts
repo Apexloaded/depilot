@@ -1,5 +1,6 @@
 import { toDate } from '../../utils';
-import { dealDocumentSchema, dealItemSubcollectionSchema } from './schemas';
+import { dealDocumentSchema } from './schemas';
+import { dealBuyerSubcollectionSchema, dealItemSubcollectionSchema } from './collections';
 
 export function parseDeal(id: string, data: FirebaseFirestore.DocumentData) {
   return dealDocumentSchema.parse({
@@ -7,6 +8,16 @@ export function parseDeal(id: string, data: FirebaseFirestore.DocumentData) {
     ...data,
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
+  });
+}
+
+export function parseDealBuyer(
+  id: string,
+  data: FirebaseFirestore.DocumentData,
+) {
+  return dealBuyerSubcollectionSchema.parse({
+    id,
+    ...data,
   });
 }
 

@@ -1,3 +1,4 @@
+import { Collections } from '../../collections/collections';
 import { PaymentPlan, PaymentPlanSchema } from '../../collections/payment-plan';
 import { firestore } from '../../config';
 
@@ -79,12 +80,12 @@ export async function seedPaymentPlan() {
   for (const property of paymentPlanSeedData) {
     const validatedProperty = PaymentPlanSchema.parse(property);
     const propertyReference = firestore
-      .collection('properties')
+      .collection(Collections.PaymentPlans)
       .doc(property.id);
 
     batch.set(propertyReference, validatedProperty);
   }
 
   await batch.commit();
-  console.log(`Seeded ${paymentPlanSeedData.length} propert(ies).`);
+  console.log(`Seeded ${paymentPlanSeedData.length} payment plan(s).`);
 }

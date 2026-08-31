@@ -23,6 +23,15 @@ export enum WorkflowStatus {
   DEAD_LETTERED = 'DEAD_LETTERED',
 }
 
+export const pendingApprovalSchema = z.object({
+  toolName: z.string(),
+  requestedArgs: z.record(z.string(), z.any()),
+  requestedAt: z.date(),
+  resolvedAt: z.date().optional(),
+  resolvedBy: z.string().optional(), // human identifier
+  decision: z.enum(['APPROVED', 'REJECTED']).optional(),
+});
+
 export const waitingForSchema = z.object({
   eventType: z.enum([
     'HITL_DEAL_APPROVAL',
@@ -47,6 +56,7 @@ export const workflowSchema = z.object({
   currentStep: z.string(),
   assignedSubAgent: z.enum(Agents).optional(),
   waitingFor: waitingForSchema.optional(),
+  pendingApproval: pendingApprovalSchema.optional(),
   attemptCount: z.number().int().nonnegative().default(0),
   maxAttempts: z.number().int().positive().default(3),
   version: z.number().int().positive(),

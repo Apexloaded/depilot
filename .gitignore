@@ -44,6 +44,8 @@ dist
 
 # IDE - VSCode
 .vscode/*
+.cursor/*
+.antigravity/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json

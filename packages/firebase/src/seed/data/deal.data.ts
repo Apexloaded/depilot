@@ -3,8 +3,9 @@ import {
   dealStore,
   CreateDealInput,
   DealItemType,
-  DealStatus,
+  DealStage,
   DealType,
+  User,
 } from '../../collections';
 import { userSeedData } from './user.data';
 
@@ -15,19 +16,25 @@ const getDealSeed = async () => {
     throw new Error('At least 3 buyers required');
   }
 
+  const transformUserToBuyer = (buyer: User, isPrimary: boolean = false) => {
+    return {
+      id: buyer.id,
+      isPrimary,
+      name: `${buyer.firstName} ${buyer.lastName}`,
+      phone: buyer.phoneNumber,
+      email: buyer.email,
+    };
+  };
+
   const dealSeeds: CreateDealInput[] = [
     {
       deal: {
-        status: DealStatus.ENQUIRY,
+        stage: DealStage.INTAKE,
         title: 'Deal 1',
         dealType: DealType.SALE,
-        buyerIds: buyers.map((u) => u.id).slice(0, 2),
-        primaryBuyer: {
-          userId: buyers[0]!.id,
-          isPrimary: true,
-          displayName: `${buyers[0]!.firstName} ${buyers[0]!.lastName}`,
-        },
+        primaryBuyer: transformUserToBuyer(buyers[0]!, true),
       },
+      buyers: [buyers[0]!].map((u) => transformUserToBuyer(u, true)),
       items: [
         {
           itemType: DealItemType.PLOT,
@@ -37,16 +44,12 @@ const getDealSeed = async () => {
     },
     {
       deal: {
-        status: DealStatus.OFFER_ISSUED,
-        title: 'Deal 1',
+        stage: DealStage.PAYMENT_PENDING,
+        title: 'Deal 2',
         dealType: DealType.SALE,
-        buyerIds: [buyers[2]!.id],
-        primaryBuyer: {
-          userId: buyers[2]!.id,
-          isPrimary: true,
-          displayName: `${buyers[2]!.firstName} ${buyers[2]!.lastName}`,
-        },
+        primaryBuyer: transformUserToBuyer(buyers[1]!, true),
       },
+      buyers: buyers.map((u) => transformUserToBuyer(u, true)).slice(0, 2),
       items: [
         {
           itemType: DealItemType.PLOT,

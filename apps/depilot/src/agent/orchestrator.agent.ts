@@ -21,6 +21,7 @@ import { checkWorkflowTool } from './tools/check-workflow.tool.js';
 import { beforeToolCallbackCheckWorkflowStatus } from './callbacks/before-tool.callback.js';
 import { Agents } from '@repo/firebase';
 import { dealPilotAgent } from './sub-agents/deal-pilot/agent.js';
+import { finalizeWorkflowStatus } from './callbacks/after-agent.callback.js';
 
 export class Agent {
   public name: string = Agents.MASTER_ORCHESTRATOR;
@@ -51,6 +52,7 @@ export class Agent {
       resolveOrCreateWorkflow,
     ],
     beforeToolCallback: [beforeToolCallbackCheckWorkflowStatus],
+    afterAgentCallback: [finalizeWorkflowStatus],
     tools: [checkWorkflowTool, LOAD_MEMORY],
     subAgents: [landGuardAgent, dealPilotAgent],
   });

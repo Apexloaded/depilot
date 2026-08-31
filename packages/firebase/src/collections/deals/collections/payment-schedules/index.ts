@@ -1,2 +1,2 @@
-export * from './collections';
 export * from './schemas';
+export * from './payment-schedule.store';

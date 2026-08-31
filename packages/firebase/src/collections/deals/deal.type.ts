@@ -1,4 +1,5 @@
-import { type DealDocument, type DealItemSubcollection } from './schemas';
+import { type DealDocument } from './schemas';
+import { DealBuyerSubcollection, type DealItemSubcollection } from './collections';
 
 export type DealInput = Omit<
   DealDocument,
@@ -20,13 +21,22 @@ export type DealItemInput = Omit<
 export type CreateDealInput = {
   deal: DealInput;
   items?: DealItemInput[];
+  buyers?: DealBuyerSubcollection[];
 };
 
 export type UpdateDealInput = Partial<DealInput> & {
-  items?: DealItemInput[];
+  items?: DealItemSubcollection[];
+  buyers?: DealBuyerSubcollection[];
 };
 
-export type DealWithItems = {
+export type DealWithItemsAndBuyers = {
   deal: DealDocument;
   items: DealItemSubcollection[];
+  buyers: DealBuyerSubcollection[];
 };
+
+export type SearchDealInput = Partial<Pick<DealDocument, 'title' | 'dealNumber' | 'dealType'>> & {
+  name?: string,
+  phone?: string,
+  email?: string
+}

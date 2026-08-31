@@ -6,14 +6,16 @@ export const ContextKeys = {
     Id: 'dealId',
     Number: 'dealNumber',
   },
-  HasAttachment: {
-    Image: 'hasImageAttachment',
-  },
+  Attachments: 'attachements',
+  HasAttachment: 'hasAttachments',
   Workflow: {
     Id: 'workflowId',
     Status: 'workflowStatus',
     Type: 'workflowType',
   },
+  Payment: {
+    ExtractedReceipt: 'extractedReceipt',
+  }
 } as const;
 
 export type ContextKey = (typeof ContextKeys)[keyof typeof ContextKeys];

@@ -4,13 +4,13 @@ import { z } from 'zod';
 // ENUMS
 // ============================================================
 
-export const PaymentStatusEnum = z.enum([
-  'PENDING',
-  'PARTIAL',
-  'COMPLETED',
-  'FAILED',
-  'REFUNDED',
-]);
+export enum PaymentStatusEnum {
+  PENDING = 'PENDING',
+  PARTIAL = 'PARTIAL',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+}
 export type PaymentStatus = z.infer<typeof PaymentStatusEnum>;
 
 /**
@@ -25,7 +25,7 @@ export const PaymentSchema = z.object({
   installmentId: z.string().nullable().optional(),
 
   amount: z.number().positive(),
-  status: PaymentStatusEnum.default('PENDING'),
+  status: z.enum(PaymentStatusEnum).default(PaymentStatusEnum.PENDING),
   createdAt: z.date(),
 });
 export type PaymentDocument = z.infer<typeof PaymentSchema>;

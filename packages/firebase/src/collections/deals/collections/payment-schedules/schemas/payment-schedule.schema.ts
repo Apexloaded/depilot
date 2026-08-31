@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { InstallmentSchema } from './installments.schema';
 
 // ============================================================
 // ENUMS
@@ -23,10 +24,10 @@ export const DealPaymentScheduleSchema = z.object({
   downPaymentAmount: z.number().nonnegative(),
   installmentAmount: z.number().nonnegative(),
   totalPaid: z.number().nonnegative().default(0),
+  balance: z.number(),
   type: DealPaymentScheduleTypeEnum.default(
     DealPaymentScheduleType.PLOT_PURCHASE,
   ),
-  balance: z.number(),
 
   startDate: z.date(),
   endDate: z.date(),
@@ -37,6 +38,7 @@ export const DealPaymentScheduleSchema = z.object({
   notes: z.string().nullable().optional(),
 
   // Denormalized aggregates for fast UI rendering
+  installments: z.array(InstallmentSchema), 
   installmentCount: z.number().int().nonnegative().default(0),
 
   createdAt: z.date(),

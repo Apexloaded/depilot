@@ -18,7 +18,7 @@ export const PaymentRecordSchema = z.object({
   paymentGateway: z.string().max(50).nullable().optional(),
   gatewayTransactionId: z.string().max(255).nullable().optional(),
   referenceNumber: z.string().max(100).nullable().optional(),
-  status: PaymentStatusEnum.default('PENDING'),
+  status: z.enum(PaymentStatusEnum).default(PaymentStatusEnum.PENDING),
   paymentDate: z.date().optional(),
   description: z.string().nullable().optional(),
 

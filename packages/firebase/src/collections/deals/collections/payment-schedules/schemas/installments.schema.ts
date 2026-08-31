@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { PaymentStatusEnum } from '../../../../payments';
+import { PaymentStatusEnum } from '../../payments';
 
 /**
  * Installment Document Schema
- * Firestore Subcollection: `.../payment_schedules/{scheduleId}/installments/{installmentId}`
+ * A property of payment_schedules/{scheduleId}  which is a subcollection of deals/{dealId}
  */
 export const InstallmentSchema = z.object({
   id: z.string(),
@@ -13,7 +13,7 @@ export const InstallmentSchema = z.object({
   dueDate: z.date(),
   amountDue: z.number().positive(),
   amountPaid: z.number().nonnegative().default(0),
-  status: PaymentStatusEnum.default('PENDING'),
+  status: z.enum(PaymentStatusEnum).default(PaymentStatusEnum.PENDING),
   paidDate: z.date().optional(),
   lateFee: z.number().nonnegative().default(0),
   notes: z.string().nullable().optional(),

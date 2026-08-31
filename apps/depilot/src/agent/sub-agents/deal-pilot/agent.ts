@@ -4,6 +4,7 @@ import { DEAL_PILOT_INSTRUCTION } from './prompts/index.js';
 import { GEMINI_3_MODEL } from '../../models/gemini/index.js';
 import { Agents } from '@repo/firebase';
 import { dealPilotTools } from './tools/index.js';
+import { beforeToolCallbackCheckDealNumber } from './callbacks/index.js';
 
 export class DealPilotAgent {
   public name: string = Agents.DEAL_PILOT;
@@ -14,7 +15,9 @@ export class DealPilotAgent {
       name: this.name,
       model: GEMINI_3_MODEL._3_1_PRO_PREVIEW,
       instruction: DEAL_PILOT_INSTRUCTION,
+      beforeToolCallback: [beforeToolCallbackCheckDealNumber],
       tools: dealPilotTools,
+      outputKey: this.name + '_output',
     });
   }
 

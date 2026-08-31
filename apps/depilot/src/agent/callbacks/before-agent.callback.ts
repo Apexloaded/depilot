@@ -20,7 +20,7 @@ import { ContextKeys } from '../common/utils/context.utils.js';
  * @returns Promise<Content | undefined>
  */
 export async function extractDealNumberFromRequest(
-  context: Context,
+  context: Context
 ): Promise<Content | undefined> {
   try {
     logger.info(`[BeforeAgentCallback]: Extracting deal number from request`);
@@ -33,7 +33,7 @@ export async function extractDealNumberFromRequest(
       | undefined;
     if (!rawUserInput) {
       logger.info(
-        `[BeforeAgentCallback]: No text content to extract a deal number from`,
+        `[BeforeAgentCallback]: No text content to extract a deal number from`
       );
       return undefined; // not an error — could be an image-only Land Guard submission
     }
@@ -41,19 +41,19 @@ export async function extractDealNumberFromRequest(
     try {
       dealNumber = extractDealNumberFromText(rawUserInput);
       logger.info(
-        `[BeforeAgentCallback]: Deal number extracted: ${dealNumber}`,
+        `[BeforeAgentCallback]: Deal number extracted: ${dealNumber}`
       );
       if (!dealNumber) return undefined;
     } catch (error) {
       logger.error(
-        `[BeforeAgentCallback]: Failed to extract deal number from message: ${rawUserInput}`,
+        `[BeforeAgentCallback]: Failed to extract deal number from message: ${rawUserInput}`
       );
       return undefined;
     }
 
     if (dealNumber) {
       logger.info(
-        `[BeforeAgentCallback]: Deal number extracted successfully: ${dealNumber}`,
+        `[BeforeAgentCallback]: Deal number extracted successfully: ${dealNumber}`
       );
       context.state.set(ContextKeys.Deal.Number, dealNumber);
     } else {
@@ -64,7 +64,7 @@ export async function extractDealNumberFromRequest(
   } catch (error: any) {
     logger.error(
       `[BeforeAgentCallback]: Unexpected error during deal extraction`,
-      error,
+      error
     );
     // Only return an error response for true runtime failures, not simple missing deal numbers
     return undefined;
@@ -77,7 +77,6 @@ export async function extractDealNumberFromRequest(
  * @returns undefined
  */
 export async function resolveOrCreateWorkflow(context: Context) {
-
   logger.info(`[BeforeAgentCallback]: Resolving or creating workflow`);
 
   const dealNumber = context.state.get(ContextKeys.Deal.Number) as
@@ -85,14 +84,14 @@ export async function resolveOrCreateWorkflow(context: Context) {
     | undefined;
   const rawInput =
     (context.state.get(ContextKeys.RawInput) as string | undefined) ?? '';
-  const hasImageAttachment =
-    (context.state.get(ContextKeys.HasAttachment.Image) as boolean) ?? false;
+  const hasAttachment =
+    (context.state.get(ContextKeys.HasAttachment) as boolean) ?? false;
   const correlationId = context.state.get(ContextKeys.CorrelationId) as
     | string
     | undefined;
 
   logger.info(
-    `[BeforeAgentCallback]: Evaluation context - dealNumber: ${dealNumber || 'NONE'}, correlationId: ${correlationId}`,
+    `[BeforeAgentCallback]: Evaluation context - dealNumber: ${dealNumber || 'NONE'}, correlationId: ${correlationId}`
   );
 
   // 1. Check for existing workflow
@@ -100,12 +99,12 @@ export async function resolveOrCreateWorkflow(context: Context) {
     const existing = await workflowStore.getWorkflowByKey({
       dealNumber,
       correlationId,
-      activeOnly: true
+      activeOnly: true,
     });
 
     if (existing) {
       logger.info(
-        `[BeforeAgentCallback]: Existing workflow resolved [ID: ${existing.id}, Type: ${existing.type}]`,
+        `[BeforeAgentCallback]: Existing workflow resolved [ID: ${existing.id}, Type: ${existing.type}]`
       );
       // A dealNumber just surfaced on a workflow that started life correlationId-only —
       // backfill so future async lookups (e.g. a webhook with only the dealNumber, no session) work.
@@ -123,16 +122,16 @@ export async function resolveOrCreateWorkflow(context: Context) {
     }
   } catch (error) {
     logger.error(
-      `[BeforeAgentCallback]: Error occurred while trying to process your request`,
+      `[BeforeAgentCallback]: Error occurred while trying to process your request`
     );
     const content: Content = {
       role: 'model',
       parts: [
         {
           text: 'Error occurred while trying to process your request',
-        }
-      ]
-    }
+        },
+      ],
+    };
     return content;
   }
 
@@ -140,7 +139,7 @@ export async function resolveOrCreateWorkflow(context: Context) {
   const prefiltered = workflowClassifier.classifyWithPrefilter({
     rawInput,
     hasDealNumber: !!dealNumber,
-    hasImageAttachment,
+    hasAttachment,
   });
   const { type, confidence } =
     prefiltered !== WorkflowType.HYBRID_VERIFICATION_WORKFLOW
@@ -167,7 +166,7 @@ export async function resolveOrCreateWorkflow(context: Context) {
   context.state.set(ContextKeys.Workflow.Type, workflow.type);
 
   logger.info(
-    `[BeforeAgentCallback]: Created new ${type} workflow [ID: ${workflow.generatedWorkflowId}]`,
+    `[BeforeAgentCallback]: Created new ${type} workflow [ID: ${workflow.generatedWorkflowId}]`
   );
 
   return undefined;
@@ -180,7 +179,7 @@ export async function resolveOrCreateWorkflow(context: Context) {
  * @returns Promise<Content | undefined>
  */
 export async function primeRequestContext(
-  context: Context,
+  context: Context
 ): Promise<Content | undefined> {
   logger.info(`[BeforeAgentCallback]: Priming request context`);
   const userContent = context.userContent;
@@ -191,22 +190,19 @@ export async function primeRequestContext(
     .map((p) => p.text)
     .join('\n');
 
-  const hasImageAttachment = parts.some(
-    (p) =>
-      'inlineData' in p &&
-      (p as any).inlineData?.mimeType?.startsWith('image/'),
-  );
+  const inlineData = parts.filter((p) => p.inlineData);
+  if (inlineData.length) {
+    context.state.set(ContextKeys.HasAttachment, true);
+  }
 
   context.state.set(ContextKeys.RawInput, rawUserInput);
-  context.state.set(ContextKeys.HasAttachment.Image, hasImageAttachment);
-
   // Stable per-session correlationId so a multi-turn conversation without a dealNumber yet
   // (e.g. "here's a survey photo" before any deal exists) resolves to ONE workflow across
   // turns, not a new one every message.
   if (!context.state.get(ContextKeys.CorrelationId)) {
     context.state.set(
       ContextKeys.CorrelationId,
-      context.sessionId ?? randomUUID(),
+      context.sessionId ?? randomUUID()
     );
   }
 
