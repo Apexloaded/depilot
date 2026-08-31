@@ -20,9 +20,17 @@ test-results/
 playwright/.cache/
 playwright-report/
 
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+firebase-debug.log*
+firebase-debug.*.log*
 
-# Turbo
-.turbo
+# Firebase cache
+.firebase/
 
 # Vercel
 .vercel

@@ -1,3 +1,9 @@
 packages:
   - "apps/depilot"
   - "packages/firebase"
+allowBuilds:
+  '@firebase/util': true
+  '@google/genai': true
+  esbuild: true
+  protobufjs: true
+  sqlite3: true
