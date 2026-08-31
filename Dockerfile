@@ -12,7 +12,9 @@ RUN find . -name "node_modules" -type d -prune -exec rm -rf {} + && \
     find . -name "dist" -type d -prune -exec rm -rf {} +
 
 # Install ALL dependencies without triggering lifecycle scripts (opencollective, napi-postinstall, etc.)
-RUN pnpm install --frozen-lockfile --unsafe-perm --dev --shamefully-hoist --config.ignore-scripts=true
+# RUN pnpm install --frozen-lockfile --unsafe-perm --dev --shamefully-hoist --config.ignore-scripts=true
+
+RUN pnpm install --no-frozen-lockfile --unsafe-perm --dev --shamefully-hoist --config.ignore-scripts=true
 
 # Build depilot and all its internal dependencies (@repo/firebase, etc.)
 RUN pnpm --filter depilot... run build
