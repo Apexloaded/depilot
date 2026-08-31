@@ -1,11 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
-import config from 'config';
 import logger from './common/logger/index.js';
 import modules from './modules/index.js';
 
-const port = config.get<number>('app.port');
-const host = config.get<string>('app.host');
+const port = Number(process.env.PORT) || 8080;
+const host = '0.0.0.0';
 
 const app = express();
 

@@ -5,6 +5,7 @@ import {
 } from './schemas';
 import { convertTimestamps } from '../../../../utils';
 import { Collections } from '../../../collections';
+import { Transaction } from 'firebase-admin/firestore';
 
 export class PaymentStore {
   /**
@@ -13,7 +14,7 @@ export class PaymentStore {
   async create(
     dealNumber: string,
     input: Omit<PaymentDocument, 'id' | 'dealId' | 'createdAt'>,
-    tx?: FirebaseFirestore.Transaction
+    tx?: Transaction
   ): Promise<PaymentDocument> {
     const collectionRef = this.getCollectionRef(dealNumber);
     const docRef = collectionRef.doc();

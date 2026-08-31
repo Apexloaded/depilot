@@ -19,6 +19,7 @@ import {
   DealItemType,
 } from './collections';
 import { convertTimestamps } from '../../utils';
+import { Transaction } from 'firebase-admin/firestore';
 
 const dealsCollection = firestore.collection(Collections.Deals.Index);
 const countersCollection = firestore.collection(Collections.Counters);
@@ -190,7 +191,7 @@ class DealStore {
    */
   async fetchDeal(
     dealNumber: string,
-    tx?: FirebaseFirestore.Transaction
+    tx?: Transaction
   ): Promise<DealWithItemsAndBuyers | null> {
     const docRef = dealsCollection.doc(dealNumber);
     const dealSnapshot = tx ? await tx.get(docRef) : await docRef.get();
@@ -383,7 +384,7 @@ class DealStore {
   async update(
     dealNumber: string,
     input: UpdateDealInput,
-    tx?: FirebaseFirestore.Transaction
+    tx?: Transaction
   ): Promise<Partial<DealWithItemsAndBuyers>> {
     // -------------------------------------------------------------------
     // RULE: In a transaction context, DO NOT run reads inside store writes!

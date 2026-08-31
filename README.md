@@ -1,125 +1,153 @@
-# Turborepo starter
+# DePilot
+> **Track:** The Taskmaster
+> **Hashtag:** #AllThingsAgenticHackathon
 
-This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
+## 🌟 Overview & Problem Statement
+- **The Problem:** Nigerian real-estate teams still validate land parcels, survey plans, payment evidence, deal records, and stage transitions through scattered chats, spreadsheets, manual ledger checks, and human-dependent follow-up. This makes fraud detection, cadastral due diligence, and payment reconciliation slow and error-prone.
+- **The Agentic Solution:** DePilot is an autonomous real-estate operations agent that accepts natural language and multimodal evidence, classifies the request, opens or resumes a persistent workflow, routes work to specialist sub-agents, executes verification tools, applies deterministic safety gates, stores memory/state in Firestore, and returns an operational verdict with the next required action.
 
-## Using this example
+## 🧠 Why It's "Agentic" (Not Just a Chatbot)
+- **Goal-Driven Autonomy:** A master ADK `LlmAgent` converts a high-level property or deal request into a workflow, classifies it as deal, due-diligence, or hybrid verification, and delegates execution to the correct specialist sub-agent instead of only answering with a prompt response.
+- **Tools & Dynamic Execution:** The orchestrator and sub-agents use ADK function tools for workflow lookup, deal search/history, deal verification, payment extraction, payment schedule generation, payment ledger application, Minna-to-WGS84 conversion, survey geometry audit, cadastral zoning checks, missing beacon reconstruction, and topography/flood-risk analysis.
+- **State & Memory Management:** Firestore stores workflow state, session events, memory entries, deal records, payment schedules, payment records, and audit history. ADK callbacks prime request context, extract deal numbers, create or resume workflows, block unsafe tool execution, compact long context, and mark workflows complete only after terminal verdicts.
 
-Run the following command:
+## 🏗️ Architecture & Google Cloud Integration
+
+```mermaid
+flowchart TD
+  User[Judge / Operator] -->|POST /chat or /stream| Express[Express service on Cloud Run]
+  Express --> Chat[ChatService]
+  Chat --> Runner[Google ADK Runner]
+  Runner --> Orchestrator[Master Orchestrator<br/>Gemini 3.5 Flash]
+  Orchestrator --> Guard[Workflow callbacks<br/>classification, state, safety gates]
+  Guard --> Firestore[(Cloud Firestore<br/>sessions, memory, workflows, deals)]
+  Orchestrator --> LandGuard[LandGuard sub-agent<br/>Gemini 3.1 Pro Preview]
+  Orchestrator --> DealPilot[DealPilot sub-agent<br/>Gemini 3.1 Pro Preview]
+  DealPilot --> Vision[Vision extraction<br/>GenAI SDK + Gemini]
+  LandGuard --> CadastralTools[Geodesy, zoning, geometry, flood tools]
+  DealPilot --> DealTools[Deal, schedule, payment, verification tools]
+  PubSub[Pub/Sub push endpoint scaffold] --> Express
+```
+
+| Component | Technology / Service Used | Specific Role in System |
+| :--- | :--- | :--- |
+| **LLM Reasoning** | Gemini Models through Google ADK and GenAI SDK | Autonomous planning, workflow classification, multimodal extraction, decision-making, and final verification |
+| **Agent Framework** | Google ADK for TypeScript (`@google/adk`) | Runner, `LlmAgent`, sub-agent orchestration, function tools, callbacks, memory loading, and context compaction |
+| **Hosting & Compute** | Google Cloud Run via the included `Dockerfile` | Serverless Express API for `/chat`, `/stream`, and Pub/Sub push handling |
+| **State & Storage** | Cloud Firestore through Firebase Admin SDK | Persistent agent sessions, memory, workflow state, deal records, payment schedules, payment records, and audit trails |
+| **Background Events** | Google Cloud Pub/Sub package and push endpoint scaffold | Event-driven workflow entrypoint is present; the subscription handler still needs final wiring before claiming full background autonomy |
+
+## 🚀 Quickstart & Judge Reproduction Guide
+
+Run locally or deploy to Cloud Run in under 3 minutes after credentials are available.
+
+### 1. Prerequisites
+
+- Node.js `>=18` (`22` is used in the Dockerfile)
+- `pnpm@8.15.5`
+- Google Cloud project with Gemini API access and Firestore enabled
+- `gcloud` CLI authenticated for Cloud Run deployment
+- Firebase service account credentials with Firestore access
+
+### 2. Environment Configuration
+
+Create `.env` from `.env.example`:
 
 ```bash
-npx create-turbo@latest -e with-nestjs
+cp .env.example .env
 ```
 
-## What's inside?
+Required schema:
 
-This Turborepo includes the following packages & apps:
-
-### Apps and Packages
-
-```shell
-.
-├── apps
-│   ├── api                       # NestJS app (https://nestjs.com).
-│   └── web                       # Next.js app (https://nextjs.org).
-│   └── depilot                   # Node.js app (https://nodejs.org).
-└── packages
-    ├── @repo/api                 # Shared `NestJS` resources.
-    ├── @repo/eslint-config       # `eslint` configurations (includes `prettier`)
-    ├── @repo/jest-config         # `jest` configurations
-    ├── @repo/typescript-config   # `tsconfig.json`s used throughout the monorepo
-    └── @repo/ui                  # Shareable stub React component library.
+```dotenv
+GOOGLE_API_KEY=your-gemini-api-key
+FIREBASE_PROJECT_ID=your-gcp-project-id
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-gcp-project-id.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+PORT=8080
+LOG_LEVEL=info
 ```
 
-Each package and application are mostly written in [TypeScript](https://www.typescriptlang.org/).
+Notes for judges:
 
-### Utilities
+- `GOOGLE_API_KEY` is used by the GenAI SDK vision/classification path.
+- Firestore variables are required at module import time by `packages/firebase/src/config/firebase.config.ts`.
+- On Cloud Run, store secrets in Secret Manager or deploy them as environment variables.
 
-This `Turborepo` has some additional tools already set for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type-safety
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-- [Jest](https://prettier.io) & [Playwright](https://playwright.dev/) for testing
-
-### Commands
-
-This `Turborepo` already configured useful commands for all your apps and packages.
-
-#### Build
+### 3. One-Command Setup & Launch Commands
 
 ```bash
-# Will build all the app & packages with the supported `build` script.
-pnpm run build
-
-# ℹ️ If you plan to only build apps individually,
-# Please make sure you've built the packages first.
+corepack enable
+corepack prepare pnpm@8.15.5 --activate
+pnpm install --frozen-lockfile
+pnpm --filter @repo/firebase build
+pnpm --filter depilot build
+pnpm --filter depilot start
 ```
 
-#### Develop
+The service starts on:
+
+```text
+http://localhost:8080
+```
+
+Cloud Run deployment:
 
 ```bash
-# Will run the development server for all the app & packages with the supported `dev` script.
-pnpm run dev
+gcloud services enable run.googleapis.com firestore.googleapis.com pubsub.googleapis.com
+gcloud run deploy depilot \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars PORT=8080,LOG_LEVEL=info
 ```
 
-#### test
+For production deployment, provide `GOOGLE_API_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` through Secret Manager instead of plain CLI flags.
+
+### 4. Pre-configured Synthetic Test Payload / API Curl Commands
+
+Deal verification request:
 
 ```bash
-# Will launch a test suites for all the app & packages with the supported `test` script.
-pnpm run test
-
-# You can launch e2e testes with `test:e2e`
-pnpm run test:e2e
-
-# See `@repo/jest-config` to customize the behavior.
+curl -sS http://localhost:8080/chat \
+  -F "userId=judge-demo" \
+  -F "message=Verify deal DEAL-2026-00042 and check whether the latest payment receipt should be applied. Do not mutate anything without approval."
 ```
 
-#### Lint
+Land due-diligence request:
 
 ```bash
-# Will lint all the app & packages with the supported `lint` script.
-# See `@repo/eslint-config` to customize the behavior.
-pnpm run lint
+curl -sS http://localhost:8080/chat \
+  -F "userId=judge-demo" \
+  -F "message=Audit a Lagos Ibeju-Lekki survey with Minna UTM Zone 31N beacons A 582104.32 714902.18, B 582204.32 714902.18, C 582204.32 714802.18, D 582104.32 714802.18. Check geometry, cadastral risk, and flood exposure."
 ```
 
-#### Format
+Multimodal receipt or survey upload:
 
 ```bash
-# Will format all the supported `.ts,.js,json,.tsx,.jsx` files.
-# See `@repo/eslint-config/prettier-base.js` to customize the behavior.
-pnpm format
+curl -sS http://localhost:8080/chat \
+  -F "userId=judge-demo" \
+  -F "message=Extract and verify this payment evidence for DEAL-2026-00042." \
+  -F "files=@./sample-receipt.png;type=image/png"
 ```
 
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+Streaming response:
 
 ```bash
-npx turbo login
+curl -N http://localhost:8080/stream \
+  -F "userId=judge-demo" \
+  -F "message=Run a hybrid verification for DEAL-2026-00042 and flag any cadastral/payment contradictions."
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## 🎥 Demo & Deliverables
+- **Live Hosted Endpoint:** Replace before Devpost submission with the Cloud Run URL, for example `https://depilot-xxxxx-uc.a.run.app`
+- **Video Walkthrough:** Replace before Devpost submission with the YouTube/Vimeo demo link
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```bash
-npx turbo link
-```
-
-## Useful Links
-
-This example take some inspiration the [with-nextjs](https://github.com/vercel/turborepo/tree/main/examples/with-nextjs) `Turbo` example and [01-cats-app](https://github.com/nestjs/nest/tree/master/sample/01-cats-app) `NestJs` sample.
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+## 🛠️ Built With
+- `Google Cloud Platform` (Cloud Run-ready Dockerfile, Firestore, Pub/Sub package/scaffold)
+- `Gemini` (Google ADK Gemini model integration and GenAI SDK multimodal extraction)
+- `Google ADK` / Agent Framework
+- `Express`
+- `TypeScript`
+- `Firebase Admin SDK`
+- `Turborepo`

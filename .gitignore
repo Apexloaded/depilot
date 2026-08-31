@@ -63,3 +63,5 @@ pnpm-debug.log*
 .DS_Store
 *.pem
 eplotone-firebase-admin.json
+
+README_SAMPLE.md

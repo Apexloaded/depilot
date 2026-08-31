@@ -1,4 +1,5 @@
 
+import { Transaction } from 'firebase-admin/firestore';
 import { firestore } from '../../../../config';
 import { convertTimestamps } from '../../../../utils';
 import { Collections } from '../../../collections';
@@ -16,7 +17,7 @@ export class PaymentRecordStore {
     dealNumber: string,
     input: Omit<PaymentRecordDocument, 'id' | 'dealId' | 'createdAt'>,
     paymentRecordId?: string,
-    tx?: FirebaseFirestore.Transaction
+    tx?: Transaction
   ): Promise<PaymentRecordDocument> {
     const collectionRef = this.getCollectionRef(dealNumber);
     const docRef = collectionRef.doc();

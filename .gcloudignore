@@ -1,0 +1,36 @@
+# Ignore git and CI/CD
+.git/
+.gitignore
+.github/
+
+# Ignore local dependencies (Cloud Build reinstalls these inside Docker)
+**/node_modules/
+node_modules/
+
+# Ignore Turborepo & build outputs
+.turbo/
+.cursor
+.vscode
+**/dist/
+**/build/
+**/out/
+**/.next/
+
+# Ignore environment & secret files
+.env
+.env.*
+!.env.example
+
+# Ignore OS & IDE metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Ignore logs & coverage
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/

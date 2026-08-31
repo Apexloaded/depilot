@@ -1,3 +1,4 @@
+import { Transaction } from 'firebase-admin/firestore';
 import { firestore } from '../../../../config';
 import { convertTimestamps } from '../../../../utils';
 import { Collections } from '../../../collections';
@@ -70,7 +71,7 @@ class PaymentScheduleStore {
         'id' | 'dealId' | 'createdAt' | 'updatedAt'
       >
     >,
-    tx?: FirebaseFirestore.Transaction
+    tx?: Transaction
   ): Promise<DealPaymentScheduleDocument> {
     const docRef = this.getCollectionRef(dealId).doc(scheduleId);
     const now = new Date();
