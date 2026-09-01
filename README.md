@@ -44,7 +44,7 @@ Run locally or deploy to Cloud Run in under 3 minutes after credentials are avai
 ### 1. Prerequisites
 
 - Node.js `>=18` (`22` is used in the Dockerfile)
-- `pnpm@8.15.5`
+- `pnpm@9.15.0`
 - Google Cloud project with Gemini API access and Firestore enabled
 - `gcloud` CLI authenticated for Cloud Run deployment
 - Firebase service account credentials with Firestore access
@@ -57,62 +57,56 @@ Create `.env` from `.env.example`:
 cp .env.example .env
 ```
 
-Required schema:
+Required variables:
 
 ```dotenv
-GOOGLE_API_KEY=your-gemini-api-key
-FIREBASE_PROJECT_ID=your-gcp-project-id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-gcp-project-id.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 PORT=8080
-LOG_LEVEL=info
+FIREBASE_PROJECT_ID=firebase_project_id
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-xxxxx@your-gcp-project-id.iam.gserviceaccount.com"
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+GOOGLE_GENAI_USE_VERTEXAI=1
+GOOGLE_CLOUD_PROJECT="google_cloud_project_id"
+GOOGLE_CLOUD_LOCATION="global"
+GOOGLE_GENAI_USE_ENTERPRISE=True
 ```
-
-Notes for judges:
-
-- `GOOGLE_API_KEY` is used by the GenAI SDK vision/classification path.
-- Firestore variables are required at module import time by `packages/firebase/src/config/firebase.config.ts`.
-- On Cloud Run, store secrets in Secret Manager or deploy them as environment variables.
 
 ### 3. One-Command Setup & Launch Commands
 
+Install the packages
 ```bash
-corepack enable
-corepack prepare pnpm@8.15.5 --activate
-pnpm install --frozen-lockfile
-pnpm --filter @repo/firebase build
-pnpm --filter depilot build
-pnpm --filter depilot start
+pnpm install
+pnpm seed:db
+pnpm deploy:indexes
 ```
 
-The service starts on:
+Seed the database and deploy indexes
 
+Ensure you have firebase cli installed on your local machine to enable you deploy indexes
+
+```bash
+pnpm seed:db
+pnpm deploy:indexes
+```
+
+Your can launch using either ADK web UI or direct API call
+
+ADK Web UI launch
+```bash
+pnpm agent:dev
+```
 ```text
-http://localhost:8080
+http://localhost:8000/
 ```
 
-Cloud Run deployment:
-
+Direct API call
 ```bash
-gcloud services enable run.googleapis.com firestore.googleapis.com pubsub.googleapis.com
-gcloud run deploy depilot \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars PORT=8080,LOG_LEVEL=info
+pnpm dev
 ```
-
-For production deployment, provide `GOOGLE_API_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` through Secret Manager instead of plain CLI flags.
+```text
+http://localhost:8080/
+```
 
 ### 4. Pre-configured Synthetic Test Payload / API Curl Commands
-
-Deal verification request:
-
-```bash
-curl -sS http://localhost:8080/chat \
-  -F "userId=judge-demo" \
-  -F "message=Verify deal DEAL-2026-00042 and check whether the latest payment receipt should be applied. Do not mutate anything without approval."
-```
 
 Land due-diligence request:
 
@@ -122,26 +116,25 @@ curl -sS http://localhost:8080/chat \
   -F "message=Audit a Lagos Ibeju-Lekki survey with Minna UTM Zone 31N beacons A 582104.32 714902.18, B 582204.32 714902.18, C 582204.32 714802.18, D 582104.32 714802.18. Check geometry, cadastral risk, and flood exposure."
 ```
 
-Multimodal receipt or survey upload:
+Multimodal to extract, verify and apply a full payment to a deal if no descripancies are found after check.
 
 ```bash
-curl -sS http://localhost:8080/chat \
-  -F "userId=judge-demo" \
-  -F "message=Extract and verify this payment evidence for DEAL-2026-00042." \
-  -F "files=@./sample-receipt.png;type=image/png"
+curl -sS http://localhost:8080/stream \
+  -F "userId=user-id" \
+  -F "message=Extract, verify and apply this payment evidence for DEAL-2026-00001." \
+  -F "files=@./test/receipt-50m.jpeg;type=image/jpeg"
 ```
 
-Streaming response:
+Multimodal to extract, verify and apply an installment payment to a deal if no descripancies are found after check.
 
 ```bash
-curl -N http://localhost:8080/stream \
-  -F "userId=judge-demo" \
-  -F "message=Run a hybrid verification for DEAL-2026-00042 and flag any cadastral/payment contradictions."
+curl -sS http://localhost:8080/stream \
+  -F "userId=user-id" \
+  -F "message=I have uploaded this payment proof from Chidi Eze, verify this payment and apply it to the deal with deal number DEAL-2026-00002" \
+  -F "files=@./test/chidi-eze-10m.jpeg;type=image/jpeg"
 ```
 
-## 🎥 Demo & Deliverables
-- **Live Hosted Endpoint:** Replace before Devpost submission with the Cloud Run URL, for example `https://depilot-xxxxx-uc.a.run.app`
-- **Video Walkthrough:** Replace before Devpost submission with the YouTube/Vimeo demo link
+You can use the same test data when testing using ADK web UI
 
 ## 🛠️ Built With
 - `Google Cloud Platform` (Cloud Run-ready Dockerfile, Firestore, Pub/Sub package/scaffold)
@@ -150,4 +143,3 @@ curl -N http://localhost:8080/stream \
 - `Express`
 - `TypeScript`
 - `Firebase Admin SDK`
-- `Turborepo`
