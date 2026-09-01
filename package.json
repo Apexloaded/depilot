@@ -7,6 +7,8 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
+    "seed:db": "tsx src/firebase/seed/seed.ts",
+    "deploy:indexes": "firebase deploy --only firestore:indexes",
     "agent:dev": "adk web src/agent/orchestrator.agent.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""

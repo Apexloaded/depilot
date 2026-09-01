@@ -8,6 +8,7 @@ import { sessionService } from '../../common/utils/index.js';
 import { agent, runner } from '../../agent/orchestrator.agent.js';
 import type { Content, Part } from '@google/genai';
 import logger from '../../common/logger/index.js';
+import { randomUUID } from 'node:crypto';
 
 export class ChatService {
   // Overload 1: Stream mode returns an AsyncGenerator of chunks
@@ -38,7 +39,7 @@ export class ChatService {
     const activeSessionId =
       typeof sessionId === 'string' && sessionId.trim()
         ? sessionId
-        : crypto.randomUUID();
+        : randomUUID();
 
     await sessionService.getOrCreateSession({
       appName: runner.appName,

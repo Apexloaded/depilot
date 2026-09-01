@@ -46,25 +46,56 @@ class ChatController {
     res: Response,
     next: NextFunction,
   ) {
-    try {
-      const stream = await this.chatService.handleChat(chatFromRequest(req), {
-        stream: true,
-      });
+    let streamStarted = false;
 
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
+      try {
+        const stream = await this.chatService.handleChat(chatFromRequest(req), {
+          stream: true,
+        });
 
-      for await (const chunk of stream) {
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache, no-transform');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no'); // stop reverse-proxy buffering
+        res.flushHeaders();
+        streamStarted = true;
+
+        // If the client disconnects, stop pulling from the generator
+        const onClose = () => {
+          stream.return?.(undefined);
+        };
+        req.on('close', onClose);
+
+        try {
+          for await (const chunk of stream) {
+            if (res.writableEnded) break;
+            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+          }
+          if (!res.writableEnded) {
+            res.write('data: [DONE]\n\n');
+          }
+        } catch (streamError) {
+          logger.error('Streaming request failed mid-stream', streamError);
+          if (!res.writableEnded) {
+            // Can't call next(error) — headers are already sent.
+            // Emit an SSE-native error event instead.
+            res.write(
+              `data: ${JSON.stringify({ error: 'Stream failed', message: (streamError as Error).message })}\n\n`,
+            );
+          }
+        } finally {
+          req.off('close', onClose);
+          if (!res.writableEnded) res.end();
+        }
+      } catch (error) {
+        logger.error('Streaming request failed', error);
+        if (streamStarted) {
+          // Headers already sent — end the connection, don't call next()
+          if (!res.writableEnded) res.end();
+        } else {
+          next(error);
+        }
       }
-
-      res.write('data: [DONE]\n\n');
-      res.end();
-    } catch (error) {
-      logger.error('Streaming request failed', error);
-      next(error);
-    }
   }
 }
 

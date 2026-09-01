@@ -35,6 +35,12 @@ const upload = multer({
 });
 
 export const multipart = (req: Request, res: Response, next: NextFunction) => {
+  // Only invoke multer for actual multipart bodies; let JSON/urlencoded
+  // requests pass through untouched to your normal body parser.
+  if (!req.is('multipart/form-data')) {
+    return next();
+  }
+
   upload.array('files', 5)(req, res, (error: unknown) => {
     if (error) {
       const message =
