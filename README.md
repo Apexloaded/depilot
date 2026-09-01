@@ -47,6 +47,7 @@ Run locally or deploy to Cloud Run in under 3 minutes after credentials are avai
 - `pnpm@9.15.0`
 - Google Cloud project with Gemini API access and Firestore enabled
 - `gcloud` CLI authenticated for Cloud Run deployment
+- `firebase` CLI authenticated for firebase deploy indexes
 - Firebase service account credentials with Firestore access
 
 ### 2. Environment Configuration
@@ -75,8 +76,6 @@ GOOGLE_GENAI_USE_ENTERPRISE=True
 Install the packages
 ```bash
 pnpm install
-pnpm seed:db
-pnpm deploy:indexes
 ```
 
 Seed the database and deploy indexes
@@ -98,7 +97,7 @@ pnpm agent:dev
 http://localhost:8000/
 ```
 
-Direct API call
+Launch for direct API call
 ```bash
 pnpm dev
 ```
